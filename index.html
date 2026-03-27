@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>山手運転録 v7</title>
+<style>
+:root{--text:#F2F5F7;--sub:#8FB7D8;--warn:#D79B4E;--danger:#C94F4F;--yellow:#D9C85A}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+html,body{margin:0;background:linear-gradient(180deg,#0a0f15 0%,#0d131a 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",sans-serif}
+.wrap{max-width:1240px;margin:0 auto;padding:18px 14px 34px}
+h1{margin:0 0 8px;font-size:24px;font-weight:800;letter-spacing:.04em}
+.lead{margin:0 0 14px;color:rgba(242,245,247,.72);font-size:14px;line-height:1.65}
+.layout{display:grid;grid-template-columns:minmax(300px,430px) minmax(280px,1fr);gap:16px;align-items:start}
+@media (max-width:930px){.layout{grid-template-columns:1fr}}
+.phone-card,.panel{border:1px solid rgba(255,255,255,.08);border-radius:22px;overflow:hidden;background:rgba(255,255,255,.03);box-shadow:0 18px 50px rgba(0,0,0,.28)}
+.phone{position:relative;aspect-ratio:390/844;background:#0b1016;overflow:hidden}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.overlay{position:absolute;inset:0;pointer-events:none}
+.meta{position:absolute;top:12px;left:14px;right:14px;display:flex;justify-content:space-between;color:rgba(242,245,247,.86);text-shadow:0 1px 8px rgba(0,0,0,.22)}
+.meta .station{font-size:13px;font-weight:700;letter-spacing:.08em}
+.meta .subtxt{display:block;margin-top:4px;font-size:10px;letter-spacing:.12em;color:rgba(242,245,247,.60)}
+.meta .clock{text-align:right;font-size:12px;font-weight:700}
+.combo{position:absolute;right:16px;top:68px;text-align:right}
+.combo .a,.limit-label,.mode-label,.mini .a{font-size:10px;letter-spacing:.14em;color:rgba(242,245,247,.46)}
+.combo .b{margin-top:4px;font-size:22px;font-weight:800}
+.combo .c{margin-top:4px;font-size:11px;color:rgba(242,245,247,.66)}
+.banner{position:absolute;left:50%;top:115px;transform:translateX(-50%);padding:10px 14px;border-radius:14px;background:rgba(12,16,22,.84);border:1px solid rgba(255,255,255,.10);font-size:13px;font-weight:700;box-shadow:0 14px 30px rgba(0,0,0,.24);opacity:0;transition:opacity .2s ease;white-space:nowrap}
+.banner.show{opacity:1}
+.distance-line{position:absolute;left:14px;right:14px;bottom:26.8%;height:5px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}
+.distance-fill{position:absolute;left:0;top:0;bottom:0;width:20%;background:linear-gradient(90deg,rgba(143,183,216,.72),rgba(242,245,247,.88))}
+.guide{position:absolute;left:18px;right:18px;bottom:29.7%;height:10px;border-radius:999px;opacity:0;background:linear-gradient(90deg,rgba(255,255,255,.16),rgba(255,255,255,.42),rgba(255,255,255,.16));box-shadow:0 0 12px rgba(255,255,255,.12)}
+.guide.show{opacity:1}
+.hudbar{position:absolute;left:0;right:0;bottom:0;height:28%;background:linear-gradient(180deg,rgba(12,16,22,.18),rgba(12,16,22,.58) 18%,rgba(12,16,22,.82) 100%);border-top:1px solid rgba(255,255,255,.08);backdrop-filter:blur(8px)}
+.speed-block{position:absolute;left:16px;bottom:11.2%;width:31%}
+.speed-val{font-size:56px;line-height:.9;font-weight:800;letter-spacing:.01em;text-shadow:0 0 16px rgba(255,255,255,.08)}
+.speed-unit{margin-top:6px;font-size:11px;letter-spacing:.14em;color:rgba(242,245,247,.56)}
+.limit-block{position:absolute;left:35%;bottom:13.2%;width:18%}
+.limit-val{margin-top:4px;font-size:30px;font-weight:750;color:var(--sub)}
+.mode{position:absolute;left:35%;bottom:7.4%}
+.mode-val{margin-top:4px;font-size:16px;font-weight:700}
+.notch{position:absolute;left:50%;transform:translateX(-50%);bottom:10.8%;display:flex;align-items:center;gap:4px}
+.stack{display:flex;flex-direction:column;gap:4px}
+.bar{width:8px;height:18px;border-radius:4px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.08)}
+.bar.on{background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(205,213,220,.86));box-shadow:0 0 10px rgba(255,255,255,.18)}
+.bar.brake.on{background:linear-gradient(180deg,rgba(215,155,78,.96),rgba(255,211,158,.82));box-shadow:0 0 10px rgba(215,155,78,.18)}
+.neutral{width:24px;text-align:center;font-weight:800;font-size:12px;color:rgba(242,245,247,.72)}
+.mini{position:absolute;right:16px;bottom:11.4%;width:25%;text-align:right}
+.mini .b{margin-top:5px;font-size:22px;font-weight:720}
+.mini .c{margin-top:3px;font-size:12px;color:rgba(242,245,247,.68)}
+.btns-left,.btns-right{position:absolute;bottom:3.7%;display:flex;gap:8px}
+.btns-left{left:16px}.btns-right{left:96px}
+.btnStatic,.horn{min-width:52px;height:42px;border-radius:11px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);display:grid;place-items:center;font-size:12px;font-weight:700;color:rgba(242,245,247,.84)}
+.horn{position:absolute;right:16px;bottom:4.1%;width:62px;font-size:11px;letter-spacing:.18em}
+.touch{position:absolute;bottom:3.7%;z-index:20;pointer-events:auto}
+.touch.left{left:16px;display:flex;gap:8px}.touch.right{left:96px;display:flex;gap:8px}.touch.hornwrap{right:16px;left:auto}
+.touch button{min-width:52px;height:42px;border-radius:11px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:rgba(242,245,247,.84);font-size:12px;font-weight:700}
+.touch.hornwrap button{width:62px;font-size:11px;letter-spacing:.18em}
+.panel{padding:14px 14px 16px}
+.panel h2{margin:2px 0 10px;font-size:16px;letter-spacing:.04em}
+.group{margin-bottom:12px;padding:12px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05)}
+.small{font-size:12px;line-height:1.65;color:rgba(242,245,247,.70)}
+.kpi{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.tile{padding:12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+.tile .t{font-size:10px;letter-spacing:.12em;color:rgba(242,245,247,.48)}
+.tile .v{margin-top:6px;font-size:22px;font-weight:800}
+.stationList{display:grid;gap:8px}
+.stationRow{display:grid;grid-template-columns:1.15fr .7fr .8fr .8fr;gap:8px;align-items:center;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);font-size:12px}
+.stationRow.head{background:rgba(255,255,255,.05);font-size:11px;color:rgba(242,245,247,.60);letter-spacing:.08em}
+.stationRow.current{border-color:rgba(143,183,216,.30);background:rgba(143,183,216,.08)}
+.timeRow{display:flex;gap:8px;flex-wrap:wrap}
+.timeBtn{border:none;border-radius:12px;background:rgba(255,255,255,.06);color:var(--text);border:1px solid rgba(255,255,255,.10);padding:10px 12px;font-size:13px;font-weight:700}
+.timeBtn.active{background:rgba(143,183,216,.14);border-color:rgba(143,183,216,.34)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>山手運転録 試作 v7</h1>
+  <p class="lead">電車運転ゲームの気持ちよさに寄せた版です。ノッチ操作の音、進入の圧、停車評価の細かさを一段増しています。</p>
+  <div class="layout">
+    <section class="phone-card">
+      <div class="phone">
+        <canvas id="scene"></canvas>
+        <div class="overlay">
+          <div class="meta">
+            <div><div class="station" id="stationLabel">原宿 → 渋谷</div><span class="subtxt" id="phaseLabel">通常走行</span></div>
+            <div class="clock">12:18<span class="subtxt" id="timePeriodLabel">MORNING RUN</span></div>
+          </div>
+          <div class="combo"><div class="a">SCORE</div><div class="b" id="scoreLabel">0</div><div class="c" id="statusLabel">発車待ち</div></div>
+          <div class="banner" id="banner">停車判定</div>
+          <div class="guide" id="guide"></div>
+          <div class="distance-line"><div class="distance-fill" id="distanceFill"></div></div>
+          <div class="hudbar"></div>
+          <div class="speed-block"><div class="speed-val" id="speedVal">0</div><div class="speed-unit">KM/H</div></div>
+          <div class="limit-block"><div class="limit-label">LIMIT</div><div class="limit-val" id="limitVal">45</div></div>
+          <div class="mode"><div class="mode-label">SECTION</div><div class="mode-val" id="modeVal">停車中</div></div>
+          <div class="notch"><div class="stack" id="powerBars"></div><div class="neutral">N</div><div class="stack" id="brakeBars"></div></div>
+          <div class="mini"><div class="a">NEXT</div><div class="b" id="nextStation">渋谷</div><div class="c" id="remainLabel">残り 1200m</div></div>
+          <div class="btns-left"><div class="btnStatic">B+</div><div class="btnStatic">B-</div></div>
+          <div class="btns-right"><div class="btnStatic">P+</div><div class="btnStatic">P-</div></div>
+          <div class="horn">HORN</div>
+        </div>
+        <div class="touch left"><button id="brakeUp">B+</button><button id="brakeDown">B-</button></div>
+        <div class="touch right"><button id="powerUp">P+</button><button id="powerDown">P-</button></div>
+        <div class="touch hornwrap"><button id="hornBtn">HORN</button></div>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>現在の状態</h2>
+      <div class="group">
+        <div class="timeRow">
+          <button class="timeBtn active" data-time="morning">朝</button>
+          <button class="timeBtn" data-time="day">昼</button>
+          <button class="timeBtn" data-time="evening">夕</button>
+          <button class="timeBtn" data-time="night">夜</button>
+        </div>
+      </div>
+      <div class="group">
+        <div class="kpi">
+          <div class="tile"><div class="t">現在駅間</div><div class="v" id="kpiSection">原宿</div></div>
+          <div class="tile"><div class="t">ノッチ</div><div class="v" id="kpiNotch">N</div></div>
+          <div class="tile"><div class="t">進入感</div><div class="v" id="kpiGuide">待機</div></div>
+        </div>
+      </div>
+      <div class="group"><div class="small">評価は、ゼロ、準ゼロ、良好、許容、粗い の5段階にしています。音を有効にすると、ノッチ、警笛、停車評価の短い音が出ます。</div></div>
+      <div class="group"><div class="stationList" id="stationList"></div></div>
+    </section>
+  </div>
+</div>
+<script>
+(() => {
+const canvas = document.getElementById('scene'), ctx = canvas.getContext('2d');
+const els = {speedVal:document.getElementById('speedVal'),limitVal:document.getElementById('limitVal'),modeVal:document.getElementById('modeVal'),phaseLabel:document.getElementById('phaseLabel'),stationLabel:document.getElementById('stationLabel'),nextStation:document.getElementById('nextStation'),remainLabel:document.getElementById('remainLabel'),distanceFill:document.getElementById('distanceFill'),guide:document.getElementById('guide'),scoreLabel:document.getElementById('scoreLabel'),statusLabel:document.getElementById('statusLabel'),banner:document.getElementById('banner'),powerBars:document.getElementById('powerBars'),brakeBars:document.getElementById('brakeBars'),kpiSection:document.getElementById('kpiSection'),kpiNotch:document.getElementById('kpiNotch'),kpiGuide:document.getElementById('kpiGuide'),stationList:document.getElementById('stationList'),timePeriodLabel:document.getElementById('timePeriodLabel')};
+
+const segments = [
+{from:'原宿',to:'渋谷',distance:1200,targetTime:70,style:'harajuku',A:{openness:.82,greenery:.72,density:.40,signage:.22,crowd:.30,light:.42,platformHint:.02,nearPressure:.34,farScale:.46},M:{openness:.55,greenery:.35,density:.68,signage:.48,crowd:.52,light:.54,platformHint:.08,nearPressure:.56,farScale:.58},B:{openness:.24,greenery:.06,density:.96,signage:.88,crowd:.92,light:.72,platformHint:.78,nearPressure:.90,farScale:.74}},
+{from:'渋谷',to:'恵比寿',distance:1600,targetTime:86,style:'shibuya',A:{openness:.20,greenery:.04,density:1.0,signage:.95,crowd:.96,light:.76,platformHint:.10,nearPressure:.94,farScale:.76},M:{openness:.34,greenery:.08,density:.86,signage:.74,crowd:.76,light:.66,platformHint:.06,nearPressure:.78,farScale:.70},B:{openness:.48,greenery:.12,density:.72,signage:.54,crowd:.62,light:.58,platformHint:.70,nearPressure:.66,farScale:.62}},
+{from:'恵比寿',to:'目黒',distance:1500,targetTime:82,style:'meguro',A:{openness:.46,greenery:.12,density:.70,signage:.50,crowd:.60,light:.56,platformHint:.08,nearPressure:.64,farScale:.60},M:{openness:.58,greenery:.16,density:.60,signage:.38,crowd:.46,light:.50,platformHint:.05,nearPressure:.52,farScale:.56},B:{openness:.52,greenery:.10,density:.66,signage:.32,crowd:.42,light:.48,platformHint:.66,nearPressure:.56,farScale:.54}},
+{from:'目黒',to:'五反田',distance:1200,targetTime:70,style:'gotanda',A:{openness:.50,greenery:.10,density:.66,signage:.30,crowd:.40,light:.46,platformHint:.06,nearPressure:.54,farScale:.52},M:{openness:.42,greenery:.06,density:.76,signage:.42,crowd:.50,light:.50,platformHint:.08,nearPressure:.70,farScale:.56},B:{openness:.28,greenery:.03,density:.88,signage:.56,crowd:.66,light:.60,platformHint:.74,nearPressure:.86,farScale:.62}},
+{from:'五反田',to:'大崎',distance:900,targetTime:54,style:'osaki',A:{openness:.30,greenery:.02,density:.84,signage:.54,crowd:.64,light:.60,platformHint:.08,nearPressure:.84,farScale:.60},M:{openness:.24,greenery:.01,density:.92,signage:.60,crowd:.72,light:.64,platformHint:.14,nearPressure:.92,farScale:.64},B:{openness:.22,greenery:.00,density:.98,signage:.68,crowd:.82,light:.68,platformHint:.82,nearPressure:.98,farScale:.68}},
+{from:'大崎',to:'品川',distance:2000,targetTime:96,style:'shinagawa',A:{openness:.26,greenery:.00,density:.92,signage:.62,crowd:.78,light:.66,platformHint:.10,nearPressure:.88,farScale:.70},M:{openness:.42,greenery:.01,density:.78,signage:.58,crowd:.70,light:.68,platformHint:.08,nearPressure:.70,farScale:.86},B:{openness:.36,greenery:.00,density:.94,signage:.72,crowd:.88,light:.78,platformHint:.88,nearPressure:.90,farScale:1.00}}
+];
+const timeProfiles = {morning:{crowd:1.25,light:.95,signage:1.05,skyTop:'#96adc4',skyBottom:'#e1e8ef',label:'MORNING RUN'},day:{crowd:.82,light:1.05,signage:.92,skyTop:'#a9bfd3',skyBottom:'#edf2f6',label:'DAY RUN'},evening:{crowd:1.12,light:.92,signage:1.00,skyTop:'#b89f8d',skyBottom:'#e9d9c9',label:'EVENING RUN'},night:{crowd:.76,light:1.40,signage:1.22,skyTop:'#243040',skyBottom:'#39485c',label:'NIGHT RUN'}};
+const state = {segIndex:0,pos:0,speed:0,power:0,brake:0,score:0,timeInSeg:0,status:'発車待ち',stopped:true,bannerTimer:0,results:[],timeOfDay:'morning',shake:0,prevSpeed:0,opTrainTimer:1.4,opTrainActive:false,opTrainPos:0,overspeedFlash:0,audioEnabled:false};
+let W=390,H=844,audioCtx=null;
+
+function ensureAudio(){
+  if(audioCtx) return audioCtx;
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if(!Ctx) return null;
+  audioCtx = new Ctx();
+  return audioCtx;
+}
+function beep(type='tick'){
+  const ctxA = ensureAudio();
+  if(!ctxA) return;
+  if(ctxA.state === 'suspended') ctxA.resume();
+  const now = ctxA.currentTime;
+  const osc = ctxA.createOscillator();
+  const gain = ctxA.createGain();
+  osc.connect(gain); gain.connect(ctxA.destination);
+  if(type === 'horn'){ osc.type='sawtooth'; osc.frequency.setValueAtTime(392, now); osc.frequency.exponentialRampToValueAtTime(330, now+0.22); gain.gain.setValueAtTime(0.0001, now); gain.gain.exponentialRampToValueAtTime(0.045, now+0.02); gain.gain.exponentialRampToValueAtTime(0.0001, now+0.24); osc.start(now); osc.stop(now+0.25); return; }
+  if(type === 'good'){ osc.type='triangle'; osc.frequency.setValueAtTime(660, now); osc.frequency.exponentialRampToValueAtTime(880, now+0.12); gain.gain.setValueAtTime(0.0001, now); gain.gain.exponentialRampToValueAtTime(0.035, now+0.02); gain.gain.exponentialRampToValueAtTime(0.0001, now+0.16); osc.start(now); osc.stop(now+0.18); return; }
+  if(type === 'ok'){ osc.type='triangle'; osc.frequency.setValueAtTime(520, now); osc.frequency.exponentialRampToValueAtTime(620, now+0.10); gain.gain.setValueAtTime(0.0001, now); gain.gain.exponentialRampToValueAtTime(0.028, now+0.02); gain.gain.exponentialRampToValueAtTime(0.0001, now+0.14); osc.start(now); osc.stop(now+0.16); return; }
+  if(type === 'bad'){ osc.type='square'; osc.frequency.setValueAtTime(220, now); gain.gain.setValueAtTime(0.0001, now); gain.gain.exponentialRampToValueAtTime(0.03, now+0.01); gain.gain.exponentialRampToValueAtTime(0.0001, now+0.12); osc.start(now); osc.stop(now+0.14); return; }
+  osc.type='square'; osc.frequency.setValueAtTime(540, now);
+  gain.gain.setValueAtTime(0.0001, now); gain.gain.exponentialRampToValueAtTime(0.018, now+0.01); gain.gain.exponentialRampToValueAtTime(0.0001, now+0.06);
+  osc.start(now); osc.stop(now+0.07);
+}
+
+function resize(){const r=canvas.getBoundingClientRect();W=r.width;H=r.height;canvas.width=Math.floor(r.width*devicePixelRatio);canvas.height=Math.floor(r.height*devicePixelRatio);ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)} resize(); addEventListener('resize', resize);
+function lerp(a,b,t){return a+(b-a)*t}
+function mix(progress,A,M,B){const o={}; if(progress<.5){const t=progress*2; for(const k in A)o[k]=lerp(A[k],M[k],t)} else {const t=(progress-.5)*2; for(const k in A)o[k]=lerp(M[k],B[k],t)} return o}
+function getSeg(){return segments[state.segIndex]}
+function currentLimit(){const s=getSeg(),r=state.pos/s.distance; if(state.stopped)return 25; if(r<.08)return 45; if(r<.22)return s.distance>=1500?60:55; if(r<.55)return s.distance>=1800?70:65; if(r<.78)return s.distance>=1500?60:55; if(r<.90)return 45; if(r<.965)return 30; return 15}
+function approachProgress(){const s=getSeg(),remain=s.distance-state.pos; if(remain>300)return 0; return Math.max(0,Math.min(1,1-remain/300))}
+function phaseName(){if(state.stopped)return '停車中'; return approachProgress()>0?'駅進入':'通常走行'}
+function guideState(limit){const ap=approachProgress(); if(ap<=0)return '待機'; const diff=state.speed-limit; if(diff>6)return '速すぎ'; if(diff>1)return 'やや速い'; if(state.speed<Math.max(8,limit-18))return 'やや遅い'; return '適正'}
+function fillBars(container,count,onCount,brake){container.innerHTML=''; for(let i=0;i<count;i++){const d=document.createElement('div'); d.className='bar'+(brake?' brake':''); if(i<onCount)d.classList.add('on'); container.appendChild(d)}}
+function sceneValues(){const s=getSeg(),p=Math.max(0,Math.min(1,state.pos/s.distance)),base=mix(p,s.A,s.M,s.B),tp=timeProfiles[state.timeOfDay]; base.crowd=Math.min(1.2,base.crowd*tp.crowd); base.light=Math.min(1.4,base.light*tp.light); base.signage=Math.min(1.2,base.signage*tp.signage); base.approach=approachProgress(); base.style=s.style; return base}
+function showBanner(t){els.banner.textContent=t; state.bannerTimer=1.25; els.banner.classList.add('show')}
+function modifyNotch(kind,delta){
+  if(!state.audioEnabled){ state.audioEnabled = true; ensureAudio(); }
+  let played = false;
+  if(state.stopped&&kind==='power'&&delta>0){state.stopped=false;state.status='発車';showBanner('発車'); beep('tick'); played = true}
+  if(kind==='power'){state.brake=0;state.power=Math.max(0,Math.min(5,state.power+delta))} else {state.power=0;state.brake=Math.max(0,Math.min(5,state.brake+delta))}
+  if(!played) beep('tick');
+}
+document.getElementById('powerUp').addEventListener('click',()=>modifyNotch('power',1));
+document.getElementById('powerDown').addEventListener('click',()=>modifyNotch('power',-1));
+document.getElementById('brakeUp').addEventListener('click',()=>modifyNotch('brake',1));
+document.getElementById('brakeDown').addEventListener('click',()=>modifyNotch('brake',-1));
+document.getElementById('hornBtn').addEventListener('click',()=>{state.audioEnabled=true; beep('horn'); showBanner('警笛')});
+document.querySelectorAll('.timeBtn').forEach(btn=>btn.addEventListener('click',()=>{state.timeOfDay=btn.dataset.time; document.querySelectorAll('.timeBtn').forEach(b=>b.classList.toggle('active',b===btn)); showBanner(btn.textContent+' モード')}));
+addEventListener('keydown',e=>{if(e.key==='ArrowRight')modifyNotch('power',1); if(e.key==='ArrowLeft')modifyNotch('power',-1); if(e.key==='ArrowUp')modifyNotch('brake',1); if(e.key==='ArrowDown')modifyNotch('brake',-1); if(e.key.toLowerCase()==='h'){state.audioEnabled=true; beep('horn'); showBanner('警笛')}});
+
+function updateStationList(){const head='<div class="stationRow head"><div>駅間</div><div>状態</div><div>停車</div><div>得点</div></div>'; const rows=segments.map((s,i)=>{const r=state.results[i]; const cls=i===state.segIndex?'stationRow current':'stationRow'; return '<div class="'+cls+'"><div>'+s.from+' → '+s.to+'</div><div>'+(r?'完了':(i<state.segIndex?'通過':'進行中'))+'</div><div>'+(r?r.grade:'---')+'</div><div>'+(r?r.points:'---')+'</div></div>'}).join(''); els.stationList.innerHTML=head+rows}
+
+function evaluateStop(){
+  const s=getSeg(); const remain=Math.abs(s.distance-state.pos);
+  let grade='許容', points=80, sound='ok';
+  if(remain<=0.1){grade='ゼロ'; points=280; sound='good'}
+  else if(remain<=0.5){grade='準ゼロ'; points=220; sound='good'}
+  else if(remain<=1.0){grade='良好'; points=180; sound='ok'}
+  else if(remain<=2.5){grade='許容'; points=120; sound='ok'}
+  else {grade='粗い'; points=60; sound='bad'}
+  points+=Math.max(0,90-Math.round(Math.abs(state.timeInSeg-s.targetTime)*1.8));
+  state.score+=points; state.results[state.segIndex]={grade:grade,points:points}; state.status=grade+' 停車'; showBanner(s.to+' '+grade);
+  if(state.audioEnabled) beep(sound);
+  state.opTrainActive=false; state.opTrainTimer=1.2+Math.random()*2.0; state.opTrainPos=0;
+  if(state.segIndex<segments.length-1){state.segIndex+=1; state.pos=0; state.speed=0; state.power=0; state.brake=0; state.timeInSeg=0; state.stopped=true}else{state.stopped=true; state.status='終着'; showBanner('品川 到着')}
+  updateStationList();
+}
+
+function updateOpTrain(dt,sc){if(state.opTrainActive){state.opTrainPos-=dt*(1.3+sc.nearPressure*.7); if(state.opTrainPos<-0.2)state.opTrainActive=false}else{state.opTrainTimer-=dt*(.6+sc.density*.6); if(state.opTrainTimer<=0){state.opTrainActive=true; state.opTrainPos=1.06; state.opTrainTimer=2.4+Math.random()*3.5}}}
+function update(dt){
+  const s=getSeg(), limit=currentLimit();
+  if(state.bannerTimer>0){state.bannerTimer-=dt; if(state.bannerTimer<=0)els.banner.classList.remove('show')}
+  if(!state.stopped){
+    state.timeInSeg+=dt;
+    const powerAccel=[0,.35,.55,.78,1.0,1.2][state.power], brakeAccel=[0,.45,.75,1.15,1.70,2.35][state.brake];
+    let accel=powerAccel-brakeAccel; accel-=state.speed>40?.14:state.speed>10?.10:.05; if(state.speed>limit+6)accel-=.24;
+    state.speed+=accel*dt*18; if(state.speed<0)state.speed=0;
+    state.pos+=(state.speed/3.6)*dt*1.12; if(state.pos>s.distance)state.pos=s.distance;
+    const remain=s.distance-state.pos;
+    if(remain<=3.0&&state.speed<=2.2&&approachProgress()>.05)evaluateStop();
+    if(state.pos>=s.distance&&state.speed>8)state.score=Math.max(0,state.score-1);
+    if(state.speed>limit+8) state.score=Math.max(0,state.score-dt*2.2);
+  }
+  const dv=state.speed-state.prevSpeed||0; state.prevSpeed=state.speed;
+  state.shake=Math.min(.08, Math.max(0,state.shake-dt*(state.stopped?4.2:2.8))+Math.min(.06,Math.abs(dv)*.00042)+(state.speed>0?.002:0));
+  state.overspeedFlash=Math.max(0,state.overspeedFlash-dt*1.8); if(state.speed>limit+4)state.overspeedFlash=Math.min(.42,state.overspeedFlash+dt*1.7);
+  updateOpTrain(dt,sceneValues()); updateUI(limit);
+}
+
+function updateUI(limit){
+  const s=getSeg(), ap=approachProgress(), sc=sceneValues(), tp=timeProfiles[state.timeOfDay];
+  els.speedVal.textContent=Math.round(state.speed); els.limitVal.textContent=limit; els.limitVal.style.color=ap>0?'var(--warn)':'var(--sub)';
+  els.modeVal.textContent=phaseName(); els.phaseLabel.textContent=state.stopped?'発車準備':(ap>0?'停車精度が問われる場面':'通常走行');
+  els.stationLabel.textContent=s.from+' → '+s.to; els.nextStation.textContent=s.to; els.remainLabel.textContent='残り '+Math.max(0,Math.round(s.distance-state.pos))+'m';
+  els.scoreLabel.textContent=state.score; els.statusLabel.textContent=state.status; els.timePeriodLabel.textContent=tp.label;
+  const fill=Math.max(4,Math.min(100,(state.pos/s.distance)*100)); els.distanceFill.style.width=fill+'%';
+  els.distanceFill.style.background=ap>0?'linear-gradient(90deg, rgba(215,155,78,.72), rgba(242,245,247,.94))':'linear-gradient(90deg, rgba(143,183,216,.72), rgba(242,245,247,.88))';
+  const gs=guideState(limit); els.kpiGuide.textContent=gs==='待機'?Math.round(ap*100)+'%':gs; els.guide.classList.toggle('show',ap>0);
+  if(ap>0){
+    if(gs==='速すぎ') els.guide.style.background='linear-gradient(90deg, rgba(201,79,79,.30), rgba(201,79,79,.72), rgba(201,79,79,.30))';
+    else if(gs==='やや速い') els.guide.style.background='linear-gradient(90deg, rgba(215,155,78,.22), rgba(215,155,78,.58), rgba(215,155,78,.22))';
+    else if(gs==='やや遅い') els.guide.style.background='linear-gradient(90deg, rgba(191,220,246,.18), rgba(191,220,246,.46), rgba(191,220,246,.18))';
+    else els.guide.style.background='linear-gradient(90deg, rgba(255,255,255,.18), rgba(255,255,255,.48), rgba(255,255,255,.18))';
+  }
+  fillBars(els.powerBars,5,state.power,false); fillBars(els.brakeBars,5,state.brake,true);
+  els.kpiSection.textContent=s.from; els.kpiNotch.textContent=state.power>0?'P'+state.power:state.brake>0?'B'+state.brake:'N';
+}
+
+function drawSky(sc){
+  const tp=timeProfiles[state.timeOfDay]; const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,tp.skyTop); g.addColorStop(.25,sc.light>1.2?'#56657a':'#d4dde4'); g.addColorStop(.54,tp.skyBottom); g.addColorStop(.55,sc.light>1.2?'#4d5766':'#cfd6db'); g.addColorStop(1,sc.light>1.2?'#27313e':'#9ea4aa');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+}
+function drawBuildings(sc){
+  const horizon=lerp(H*.50,H*.59,1-sc.openness), t=performance.now()*0.0001+state.pos*0.004;
+  const layers=[{c:sc.light>1.2?'rgba(64,82,104,0.70)':'rgba(89,102,114,0.52)', xs:[.02,.15,.26,.61,.76,.87], hs:[.12,.08,.11,.10,.15,.12], ws:[.14,.11,.16,.12,.10,.15], sh:.16},
+  {c:sc.light>1.2?'rgba(48,60,74,0.84)':'rgba(84,92,101,0.78)', xs:[0,.12,.20,.66,.79,.88], hs:[.19,.15,.17,.18,.21,.17], ws:[.13,.10,.13,.12,.11,.12], sh:.42},
+  {c:sc.light>1.2?'rgba(34,42,54,0.96)':'rgba(95,102,110,0.96)', xs:[0,.09,.79,.88], hs:[.25,.21,.27,.23], ws:[.10,.09,.09,.12], sh:1.0}];
+  layers.forEach((layer,idx)=>{ctx.fillStyle=layer.c; layer.xs.forEach((x,i)=>{const offset=((t*(idx+1)*26)%(W*.18))*layer.sh*(.22+sc.nearPressure*.08); const dir=i<Math.ceil(layer.xs.length/2)?-1:1; const left=W*x+dir*offset; const w=W*layer.ws[Math.min(i,layer.ws.length-1)]; let h=H*layer.hs[Math.min(i,layer.hs.length-1)]*(.75+sc.density*.50+(idx===0?sc.farScale*.25:0)); if(sc.style==='shibuya'&&idx>0)h*=1.08; if(sc.style==='meguro'&&idx===0)h*=.92; if(sc.style==='shinagawa'&&idx===0)h*=1.12; ctx.fillRect(left,horizon-h+idx*4,w,h); if(sc.signage>.35&&idx>0&&(i%2===0)){ctx.fillStyle=sc.light>1.2?'rgba(255,211,158,0.76)':'rgba(214,232,255,0.46)'; ctx.fillRect(left+w*.15,horizon-h+10+(i*6)%14,w*.35,4); ctx.fillStyle=layer.c}})});
+}
+function drawTrack(sc){
+  const baseCurve=Math.sin(state.pos/210)*(.01+sc.nearPressure*.02), sway=Math.sin(performance.now()*0.006)*(.004+state.shake*.4), vpX=W*(.5+baseCurve+sway), vpY=H*(.39+(1-sc.openness)*.05-state.shake*.02), ballastTop=H*(.65-sc.openness*.02);
+  const ballast=new Path2D(); ballast.moveTo(W*.08,H); ballast.lineTo(W*.92,H); ballast.lineTo(vpX+W*(.11+sc.nearPressure*.02),ballastTop); ballast.lineTo(vpX-W*(.11+sc.nearPressure*.02),ballastTop); ballast.closePath();
+  const bg=ctx.createLinearGradient(0,ballastTop,0,H); bg.addColorStop(0,'rgba(132,138,145,.12)'); bg.addColorStop(.56,'rgba(110,114,120,.78)'); bg.addColorStop(1,sc.light>1.2?'rgba(64,70,82,1)':'rgba(92,95,101,1)');
+  ctx.fillStyle=bg; ctx.fill(ballast);
+  ctx.strokeStyle='rgba(183,185,188,.98)'; ctx.lineWidth=2.4; ctx.beginPath(); ctx.moveTo(W*.19,H); ctx.lineTo(vpX-W*.018,vpY); ctx.moveTo(W*.81,H); ctx.lineTo(vpX+W*.018,vpY); ctx.stroke();
+  const count=Math.floor(9+sc.density*3);
+  for(let i=0;i<count;i++){const t=i/Math.max(1,count-1), y=H*(.94-t*.29)-state.shake*H*.01, width=W*(.56-t*.33); ctx.fillStyle='rgba(77,82,87,.9)'; ctx.fillRect((W-width)/2+(baseCurve+sway)*W*(.8-sc.openness*.3)*(1-t),y,width,2)}
+  ctx.strokeStyle='rgba(141,147,154,.35)'; ctx.lineWidth=2; ctx.beginPath();
+  ctx.moveTo(0,H*(.82-sc.openness*.02)); ctx.lineTo(W*(.20-sc.openness*.03),H*.82); ctx.lineTo(vpX-W*.12,ballastTop);
+  ctx.moveTo(W,H*(.82-sc.openness*.02)); ctx.lineTo(W*(.80+sc.openness*.03),H*.82); ctx.lineTo(vpX+W*.12,ballastTop); ctx.stroke();
+}
+function drawPoles(sc){
+  const dense=1+sc.density*.55+sc.approach*.35, count=Math.floor(4+dense*2.2);
+  for(let i=0;i<count;i++){const side=i<count/2?-1:1, rank=(i%Math.ceil(count/2))/Math.max(1,Math.ceil(count/2)-1), xBase=side<0?lerp(.14,.31,rank):lerp(.86,.69,rank), x=W*xBase, h=H*lerp(.22,.38,rank)*dense*.74;
+    ctx.strokeStyle='rgba(236,240,244,.88)'; ctx.lineWidth=2.2; ctx.beginPath(); ctx.moveTo(x,H*.78); ctx.lineTo(x,H*.78-h); ctx.stroke();
+    ctx.strokeStyle='rgba(214,220,225,.72)'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(x-12,H*.78-h*.90); ctx.lineTo(x+16,H*.78-h*.90); ctx.stroke();
+  }
+  ctx.strokeStyle='rgba(255,255,255,.22)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(W*.5,H*.21); ctx.lineTo(W*.9,H*.18); ctx.moveTo(W*.5,H*.21); ctx.lineTo(W*.1,H*.18); ctx.stroke();
+}
+function drawOpposingTrain(sc){
+  if(!state.opTrainActive) return;
+  const p=state.opTrainPos, y=lerp(H*.70,H*.48,1-p), w=lerp(W*.36,W*.12,1-p), h=lerp(30,12,1-p), x=(sc.style==='shibuya'?W*.76:W*.72)+Math.sin(performance.now()*0.02)*2;
+  ctx.fillStyle=sc.light>1.2?'rgba(255,226,188,.24)':'rgba(210,220,232,.18)'; ctx.fillRect(x-w/2,y,w,h);
+  ctx.fillStyle=sc.light>1.2?'rgba(255,203,138,.34)':'rgba(170,190,210,.22)'; ctx.fillRect(x-w/2+6,y+5,w-12,4);
+  ctx.strokeStyle='rgba(255,255,255,.12)'; ctx.strokeRect(x-w/2,y,w,h);
+}
+function drawPlatform(sc){
+  const ap=Math.max(sc.approach,sc.platformHint*.15); if(ap<=.001)return;
+  const t=.45+ap*.5, leftW=W*lerp(.16,.35,t), rightW=W*lerp(.16,.35,t), topY=H*lerp(.70,.67,ap);
+  ctx.fillStyle=sc.light>1.2?'rgba(110,118,130,.96)':'rgba(170,178,185,.92)';
+  ctx.beginPath(); ctx.moveTo(0,H); ctx.lineTo(leftW,H); ctx.lineTo(leftW*.74,topY); ctx.lineTo(0,topY+H*.03); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(W,H); ctx.lineTo(W-rightW,H); ctx.lineTo(W-rightW*.74,topY); ctx.lineTo(W,topY+H*.03); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='rgba(217,200,90,1)';
+  ctx.beginPath(); ctx.moveTo(leftW*.22,H*.83); ctx.lineTo(leftW*.98,H*.83); ctx.lineTo(leftW*.76,topY+H*.02); ctx.lineTo(leftW*.10,topY+H*.02); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(W-rightW*.22,H*.83); ctx.lineTo(W-rightW*.98,H*.83); ctx.lineTo(W-rightW*.76,topY+H*.02); ctx.lineTo(W-rightW*.10,topY+H*.02); ctx.closePath(); ctx.fill();
+  const roofAlpha=.28+ap*.34; ctx.fillStyle='rgba(62,68,74,'+roofAlpha+')';
+  ctx.beginPath(); ctx.moveTo(0,H*.34); ctx.lineTo(W*.31,H*(.37+sc.signage*.01)); ctx.lineTo(W*.31,H*.43); ctx.lineTo(0,H*.40); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(W,H*.34); ctx.lineTo(W-W*.31,H*(.37+sc.signage*.01)); ctx.lineTo(W-W*.31,H*.43); ctx.lineTo(W,H*.40); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle=sc.light>1.2?'rgba(255,218,164,.85)':'rgba(255,255,255,.9)'; ctx.lineWidth=2;
+  [0.21,0.27,0.34].forEach(f=>{ctx.beginPath(); ctx.moveTo(leftW*f,H*.82); ctx.lineTo(leftW*f,H*.82-H*(.13+f*.18)); ctx.stroke(); ctx.beginPath(); ctx.moveTo(W-rightW*f,H*.82); ctx.lineTo(W-rightW*f,H*.82-H*(.13+f*.18)); ctx.stroke()});
+  const crowdCount=Math.floor(sc.crowd*18);
+  for(let i=0;i<crowdCount;i++){const side=i%2===0?-1:1, lane=(i%9)/9, baseX=side<0?leftW*lerp(.18,.84,lane):W-rightW*lerp(.18,.84,lane), y=lerp(H*.78,topY+H*.06,lane), h=lerp(8,14,lane), w=lerp(3,5,lane); ctx.fillStyle=sc.light>1.2?'rgba(255,223,182,.56)':'rgba(32,38,44,.46)'; ctx.fillRect(baseX,y,w,h); ctx.beginPath(); ctx.arc(baseX+w/2,y-2.5,2.1,0,Math.PI*2); ctx.fill()}
+  const markerScale=.82+ap*.95+(state.speed>currentLimit()?0.14:0), mw=14*markerScale, mh=42*markerScale;
+  ctx.globalAlpha=Math.min(1,t*1.2); ctx.strokeStyle='rgba(255,255,255,.95)'; ctx.fillStyle='rgba(255,255,255,.10)'; ctx.lineWidth=2;
+  ctx.strokeRect(W*.5-mw/2,H*.88,mw,mh); ctx.fillRect(W*.5-mw/2,H*.88,mw,mh); ctx.globalAlpha=1;
+}
+function drawOverspeedVignette(){
+  if(state.overspeedFlash<=0) return;
+  const g=ctx.createRadialGradient(W*.5,H*.72,20,W*.5,H*.72,W*.75);
+  g.addColorStop(0,'rgba(201,79,79,0)');
+  g.addColorStop(.7,'rgba(201,79,79,'+(state.overspeedFlash*0.45)+')');
+  g.addColorStop(1,'rgba(201,79,79,'+(state.overspeedFlash*0.75)+')');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+}
+function drawScene(){
+  const sc=sceneValues();
+  ctx.save();
+  const dx=Math.sin(performance.now()*0.009)*(state.shake*W*0.8), dy=Math.cos(performance.now()*0.012)*(state.shake*H*0.3);
+  ctx.translate(dx,dy);
+  drawSky(sc); drawBuildings(sc); drawTrack(sc); drawPoles(sc); drawOpposingTrain(sc); drawPlatform(sc); drawOverspeedVignette();
+  ctx.restore();
+}
+let last=performance.now();
+function loop(now){const dt=Math.min(.04,(now-last)/1000); last=now; update(dt); drawScene(); requestAnimationFrame(loop)}
+
+fillBars(els.powerBars,5,0,false); fillBars(els.brakeBars,5,0,true); updateStationList(); requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
