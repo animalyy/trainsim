@@ -303,6 +303,8 @@
       spawnTimer: 1.0,
       lockedTargetId: null,
       lockTimer: 0,
+      inputLockTimer: 0,
+      runtimeRefreshQueued: false,
     };
   }
 
@@ -331,11 +333,53 @@
     return margin + step * i;
   }
 
+
+  function flushRuntimeMemory(opts = {}) {
+    const keepParticles = !!opts.keepParticles;
+    const keepLightBursts = !!opts.keepLightBursts;
+    const keepStars = !!opts.keepStars;
+    game.enemies = [];
+    game.enemyBullets = [];
+    game.bullets = [];
+    if (!keepParticles) game.particles = [];
+    else if (game.particles.length > 60) game.particles.splice(0, game.particles.length - 60);
+    if (!keepLightBursts) game.lightBursts = [];
+    else if (game.lightBursts.length > 16) game.lightBursts.splice(0, game.lightBursts.length - 16);
+    if (!keepStars) game.stars = [];
+    game.lockedTargetId = null;
+    game.lockTimer = 0;
+    game.shock = 0;
+    game.flash = 0;
+    game.flashColor = '#ffffff';
+    game.recoil = 0;
+    game.hitStopTimer = 0;
+    game.zoomPunch = 0;
+    game.screenZoom = 1;
+    game.feverFlash = 0;
+    game.newRecordFreeze = 0;
+    game.newRecordFlash = Math.min(game.newRecordFlash || 0, 0.25);
+    game.runtimeRefreshQueued = false;
+    audioNodeCount = 0;
+    stopFireInput();
+    game.lastTapAt = 0;
+  }
+
+  function refreshBeforeStart() {
+    flushRuntimeMemory({ keepParticles: false, keepLightBursts: false, keepStars: false });
+    initStars();
+    updateBasePosition();
+  }
+
+  function refreshAfterBossDefeat() {
+    flushRuntimeMemory({ keepParticles: true, keepLightBursts: true, keepStars: true });
+    game.inputLockTimer = 0.12;
+    game.runtimeRefreshQueued = false;
+  }
+
   function resetGame() {
     game = makeGame();
     game.state = 'play';
-    updateBasePosition();
-    initStars();
+    refreshBeforeStart();
     updatePhaseText();
     updateHud();
     mainTitle.innerHTML = 'QUANTUM<br>SWARM';
@@ -356,7 +400,7 @@
   }
 
   function setPhase(phase) {
-    if (game.state !== 'play') return false;
+    if (game.state !== 'play' || game.inputLockTimer > 0) return false;
     if (game.phase === phase) return false;
     game.phase = phase;
     updatePhaseText();
@@ -573,6 +617,10 @@
     game.waveBossCleared = false;
     game.enemies = [];
     game.enemyBullets = [];
+    stopFireInput();
+    game.lastTapAt = 0;
+    game.inputLockTimer = 0.12;
+    game.runtimeRefreshQueued = true;
     const praise = PRAISE_POOL[Math.floor(Math.random() * PRAISE_POOL.length)];
     showFloatingText(game.baseX, h * 0.32, praise, '#ffea00', 1.6);
   }
@@ -842,6 +890,7 @@
   }
 
   function firePulse() {
+    if (game.inputLockTimer > 0) return;
     if (game.energy < 100 || game.pulseCooldown > 0) return;
     game.energy = 0;
     game.pulseCooldown = 0.7;
@@ -1637,7 +1686,7 @@
   }
 
   function onPointerDown(e) {
-    if (game.state !== 'play') return;
+    if (game.state !== 'play' || game.inputLockTimer > 0) return;
     if (e.pointerType === 'touch') return;
     startFireInput();
     game.activePointerId = e.pointerId;
@@ -1663,7 +1712,7 @@
   }
 
   function onFireTouchStart(e) {
-    if (game.state !== 'play') return;
+    if (game.state !== 'play' || game.inputLockTimer > 0) return;
     if (game.fireTouchId !== null) return;
     const t = e.changedTouches[0];
     if (!t) return;
@@ -1690,7 +1739,7 @@
   }
 
   function onFirePointerDown(e) {
-    if (game.state !== 'play') return;
+    if (game.state !== 'play' || game.inputLockTimer > 0) return;
     e.preventDefault();
     e.stopPropagation();
     if (e.pointerType === 'touch') return;
