@@ -6,9 +6,17 @@
 <title>山手運転録 v7</title>
 <style>
 :root{--text:#F2F5F7;--sub:#8FB7D8;--warn:#D79B4E;--danger:#C94F4F;--yellow:#D9C85A}
+@keyframes flash{0%,100%{opacity:1}50%{opacity:.45}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-html,body{margin:0;background:linear-gradient(180deg,#0a0f15 0%,#0d131a 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",sans-serif}
-.wrap{max-width:1240px;margin:0 auto;padding:18px 14px 34px}
+html,body{margin:0;height:100%;width:100%;overflow:hidden;overscroll-behavior:none;touch-action:none;background:linear-gradient(180deg,#0a0f15 0%,#0d131a 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",sans-serif}
+
+.wrap{max-width:none;margin:0;padding:0;height:100dvh;overflow:hidden}
+h1,.lead,.panel{display:none}
+.layout{display:block;height:100%}
+.phone-card{border:none;border-radius:0;box-shadow:none;background:#0b1016;height:100%}
+.phone{height:100dvh;aspect-ratio:auto}
+.touch,.touch *,.phone,.phone *{touch-action:none;user-select:none;-webkit-user-select:none}
+
 h1{margin:0 0 8px;font-size:24px;font-weight:800;letter-spacing:.04em}
 .lead{margin:0 0 14px;color:rgba(242,245,247,.72);font-size:14px;line-height:1.65}
 .layout{display:grid;grid-template-columns:minmax(300px,430px) minmax(280px,1fr);gap:16px;align-items:start}
@@ -55,7 +63,177 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .touch{position:absolute;bottom:3.7%;z-index:20;pointer-events:auto}
 .touch.left{left:16px;display:flex;gap:8px}.touch.right{left:96px;display:flex;gap:8px}.touch.hornwrap{right:16px;left:auto}
 .touch button{min-width:52px;height:42px;border-radius:11px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:rgba(242,245,247,.84);font-size:12px;font-weight:700}
+
 .touch.hornwrap button{width:62px;font-size:11px;letter-spacing:.18em}
+.touch button{transition:transform .05s ease, filter .08s ease, border-color .08s ease, background .08s ease}
+.touch button.pressed{transform:translateY(1px) scale(.992);filter:brightness(1.08);border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.08)}
+.station-accent{position:absolute;left:50%;transform:translateX(-50%);top:44px;padding:4px 10px;border-radius:999px;background:rgba(12,16,22,.42);border:1px solid rgba(255,255,255,.05);font-size:10px;letter-spacing:.12em;color:rgba(242,245,247,.58);z-index:6;backdrop-filter:blur(4px)}
+.phone::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0) 18%),
+    linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 64%, rgba(0,0,0,.18) 100%);
+}
+.cab-frame-top,.cab-frame-left,.cab-frame-right,.cab-frame-bottom,.cab-reflection,.cab-rivets,.dash-shelf{position:absolute;pointer-events:none;z-index:3}
+.cab-frame-top{left:0;right:0;top:0;height:38px;background:linear-gradient(180deg, rgba(32,38,45,.92), rgba(18,22,27,.88));border-bottom:1px solid rgba(255,255,255,.05);box-shadow:0 8px 18px rgba(0,0,0,.22)}
+.cab-frame-left,.cab-frame-right{top:0;bottom:28%;width:10px;background:linear-gradient(180deg, rgba(34,39,46,.92), rgba(18,22,27,.84))}
+.cab-frame-left{left:0;border-right:1px solid rgba(255,255,255,.05)}
+.cab-frame-right{right:0;border-left:1px solid rgba(255,255,255,.05)}
+.cab-frame-bottom{left:0;right:0;bottom:28%;height:18px;background:linear-gradient(180deg, rgba(20,24,29,.2), rgba(15,18,23,.78));border-top:1px solid rgba(255,255,255,.05)}
+.cab-reflection{left:7%;right:7%;top:5%;height:28%;background:radial-gradient(ellipse at 28% 0%, rgba(255,255,255,.10), rgba(255,255,255,0) 52%),radial-gradient(ellipse at 68% 0%, rgba(255,255,255,.06), rgba(255,255,255,0) 50%);opacity:.9}
+.cab-rivets{left:0;right:0;bottom:22.4%;height:18px;background:radial-gradient(circle at 12px 9px, rgba(255,255,255,.22) 0 1.2px, rgba(0,0,0,0) 1.4px),radial-gradient(circle at 38px 9px, rgba(255,255,255,.18) 0 1.2px, rgba(0,0,0,0) 1.4px),radial-gradient(circle at calc(100% - 38px) 9px, rgba(255,255,255,.18) 0 1.2px, rgba(0,0,0,0) 1.4px),radial-gradient(circle at calc(100% - 12px) 9px, rgba(255,255,255,.22) 0 1.2px, rgba(0,0,0,0) 1.4px);opacity:.55}
+.dash-shelf{left:0;right:0;bottom:22.8%;height:24px;background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 18%),linear-gradient(180deg, rgba(36,42,49,.95), rgba(17,21,26,.95));border-top:1px solid rgba(255,255,255,.05)}
+.atc-box{position:absolute;left:16px;top:70px;z-index:6;width:64px;height:64px;border-radius:16px;background:linear-gradient(180deg, rgba(23,28,34,.84), rgba(13,16,21,.78));border:1px solid rgba(255,255,255,.06);box-shadow:inset 0 1px 0 rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;flex-direction:column}
+.atc-box .a{font-size:10px;letter-spacing:.12em;color:rgba(242,245,247,.46)}
+.atc-box .b{margin-top:4px;font-size:28px;font-weight:800}
+.stop-meter{position:absolute;left:50%;transform:translateX(-50%);bottom:23.9%;width:112px;height:28px;z-index:6;border-radius:999px;background:linear-gradient(180deg, rgba(22,27,32,.88), rgba(12,16,21,.88));border:1px solid rgba(255,255,255,.06);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.stop-meter .track{position:absolute;left:8px;right:8px;top:11px;height:6px;border-radius:999px;background:rgba(255,255,255,.08)}
+.stop-meter .zero{position:absolute;left:50%;top:6px;width:2px;height:16px;background:rgba(255,255,255,.55);transform:translateX(-50%)}
+.stop-meter .needle{position:absolute;top:9px;width:24px;height:10px;border-radius:999px;background:linear-gradient(90deg, rgba(255,255,255,.28), rgba(255,255,255,.82), rgba(255,255,255,.28));box-shadow:0 0 10px rgba(255,255,255,.15);left:44px}
+
+
+.phone::before{
+  content:"";
+  position:absolute; inset:0;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0) 18%),
+    linear-gradient(180deg, rgba(0,0,0,.0) 0%, rgba(0,0,0,.0) 64%, rgba(0,0,0,.18) 100%);
+  pointer-events:none; z-index:2;
+}
+.cab-frame-top,.cab-frame-left,.cab-frame-right,.cab-frame-bottom,.cab-reflection,.cab-rivets,.dash-shelf{
+  position:absolute; pointer-events:none; z-index:3;
+}
+.cab-frame-top{
+  left:0; right:0; top:0; height:38px;
+  background:linear-gradient(180deg, rgba(32,38,45,.92), rgba(18,22,27,.88));
+  border-bottom:1px solid rgba(255,255,255,.05);
+  box-shadow:0 8px 18px rgba(0,0,0,.22);
+}
+.cab-frame-left,.cab-frame-right{
+  top:0; bottom:28%; width:10px;
+  background:linear-gradient(180deg, rgba(34,39,46,.92), rgba(18,22,27,.84));
+}
+.cab-frame-left{left:0; border-right:1px solid rgba(255,255,255,.05)}
+.cab-frame-right{right:0; border-left:1px solid rgba(255,255,255,.05)}
+.cab-frame-bottom{
+  left:0; right:0; bottom:28%; height:18px;
+  background:linear-gradient(180deg, rgba(20,24,29,.2), rgba(15,18,23,.78));
+  border-top:1px solid rgba(255,255,255,.05);
+}
+.cab-reflection{
+  left:7%; right:7%; top:5%; height:28%;
+  background:
+    radial-gradient(ellipse at 28% 0%, rgba(255,255,255,.10), rgba(255,255,255,0) 52%),
+    radial-gradient(ellipse at 68% 0%, rgba(255,255,255,.06), rgba(255,255,255,0) 50%);
+  opacity:.9;
+}
+.cab-rivets{
+  left:0; right:0; bottom:22.4%; height:18px;
+  background:
+    radial-gradient(circle at 12px 9px, rgba(255,255,255,.22) 0 1.2px, rgba(0,0,0,0) 1.4px),
+    radial-gradient(circle at 38px 9px, rgba(255,255,255,.18) 0 1.2px, rgba(0,0,0,0) 1.4px),
+    radial-gradient(circle at calc(100% - 38px) 9px, rgba(255,255,255,.18) 0 1.2px, rgba(0,0,0,0) 1.4px),
+    radial-gradient(circle at calc(100% - 12px) 9px, rgba(255,255,255,.22) 0 1.2px, rgba(0,0,0,0) 1.4px);
+  opacity:.55;
+}
+.dash-shelf{
+  left:0; right:0; bottom:22.8%; height:24px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 18%),
+    linear-gradient(180deg, rgba(36,42,49,.95), rgba(17,21,26,.95));
+  border-top:1px solid rgba(255,255,255,.05);
+}
+.meta{
+  z-index:6;
+}
+.combo{
+  z-index:6;
+  padding:8px 10px;
+  border-radius:12px;
+  background:linear-gradient(180deg, rgba(18,22,27,.44), rgba(14,18,23,.20));
+  border:1px solid rgba(255,255,255,.06);
+  backdrop-filter:blur(5px);
+}
+.banner{z-index:7}
+.distance-line,.guide,.hudbar,.speed-block,.limit-block,.mode,.notch,.mini{z-index:6}
+.speed-block,.limit-block,.mode,.mini{
+  text-shadow:0 1px 10px rgba(0,0,0,.26);
+}
+.speed-val{
+  letter-spacing:0;
+}
+.limit-val{
+  position:relative;
+}
+.limit-val::after{
+  content:"";
+  position:absolute; inset:-6px -10px;
+  border:1px solid rgba(143,183,216,.18);
+  border-radius:12px;
+}
+.notch{
+  padding:8px 10px;
+  border-radius:14px;
+  background:linear-gradient(180deg, rgba(24,29,35,.70), rgba(13,16,20,.62));
+  border:1px solid rgba(255,255,255,.06);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+.btns-left,.btns-right{z-index:5}
+.btnStatic,.horn,.touch button{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02) 26%, rgba(255,255,255,.01)),
+    linear-gradient(180deg, rgba(31,37,43,.96), rgba(15,18,23,.96));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 6px 12px rgba(0,0,0,.18);
+}
+.touch button{
+  transition:transform .06s ease, filter .08s ease, border-color .08s ease;
+}
+.touch button:active{
+  transform:translateY(1px) scale(.992);
+  filter:brightness(1.08);
+  border-color:rgba(255,255,255,.18);
+}
+.touch.left,.touch.right,.touch.hornwrap{
+  bottom:3.2%;
+}
+.speed-unit,.mini .a,.limit-label,.mode-label{
+  opacity:.9;
+}
+.stop-meter{
+  position:absolute; left:50%; transform:translateX(-50%);
+  bottom:23.9%; width:112px; height:28px; z-index:6;
+  border-radius:999px;
+  background:linear-gradient(180deg, rgba(22,27,32,.88), rgba(12,16,21,.88));
+  border:1px solid rgba(255,255,255,.06);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+.stop-meter .track{
+  position:absolute; left:8px; right:8px; top:11px; height:6px; border-radius:999px;
+  background:rgba(255,255,255,.08);
+}
+.stop-meter .zero{
+  position:absolute; left:50%; top:6px; width:2px; height:16px; background:rgba(255,255,255,.55);
+  transform:translateX(-50%);
+}
+.stop-meter .needle{
+  position:absolute; top:9px; width:24px; height:10px; border-radius:999px;
+  background:linear-gradient(90deg, rgba(255,255,255,.28), rgba(255,255,255,.82), rgba(255,255,255,.28));
+  box-shadow:0 0 10px rgba(255,255,255,.15);
+  left:44px;
+}
+.atc-box{
+  position:absolute; left:16px; top:70px; z-index:6;
+  width:64px; height:64px; border-radius:16px;
+  background:linear-gradient(180deg, rgba(23,28,34,.84), rgba(13,16,21,.78));
+  border:1px solid rgba(255,255,255,.06);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+  display:flex; align-items:center; justify-content:center; flex-direction:column;
+}
+.atc-box .a{font-size:10px; letter-spacing:.12em; color:rgba(242,245,247,.46)}
+.atc-box .b{margin-top:4px; font-size:28px; font-weight:800}
+
 .panel{padding:14px 14px 16px}
 .panel h2{margin:2px 0 10px;font-size:16px;letter-spacing:.04em}
 .group{margin-bottom:12px;padding:12px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05)}
@@ -76,19 +254,28 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 <body>
 <div class="wrap">
   <h1>山手運転録 試作 v7</h1>
-  <p class="lead">電車運転ゲームの気持ちよさに寄せた版です。ノッチ操作の音、進入の圧、停車評価の細かさを一段増しています。</p>
+  <p class="lead">公開用に寄せた完成版です。長押し操作、景色の補間、音、停車評価、運転席の厚みをまとめて詰めています。</p>
   <div class="layout">
     <section class="phone-card">
       <div class="phone">
         <canvas id="scene"></canvas>
+        <div class="cab-frame-top"></div>
+        <div class="cab-frame-left"></div>
+        <div class="cab-frame-right"></div>
+        <div class="cab-frame-bottom"></div>
+        <div class="cab-reflection"></div>
+        <div class="dash-shelf"></div>
+        <div class="cab-rivets"></div>
         <div class="overlay">
           <div class="meta">
             <div><div class="station" id="stationLabel">原宿 → 渋谷</div><span class="subtxt" id="phaseLabel">通常走行</span></div>
             <div class="clock">12:18<span class="subtxt" id="timePeriodLabel">MORNING RUN</span></div>
           </div>
+          <div class="atc-box"><div class="a">ATC</div><div class="b" id="atcLabel">45</div></div>
           <div class="combo"><div class="a">SCORE</div><div class="b" id="scoreLabel">0</div><div class="c" id="statusLabel">発車待ち</div></div>
           <div class="banner" id="banner">停車判定</div>
           <div class="guide" id="guide"></div>
+          <div class="stop-meter"><div class="track"></div><div class="zero"></div><div class="needle" id="stopNeedle"></div></div>
           <div class="distance-line"><div class="distance-fill" id="distanceFill"></div></div>
           <div class="hudbar"></div>
           <div class="speed-block"><div class="speed-val" id="speedVal">0</div><div class="speed-unit">KM/H</div></div>
@@ -129,8 +316,13 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 </div>
 <script>
 (() => {
+
+document.addEventListener('touchmove', function(e){ e.preventDefault(); }, {passive:false});
+document.addEventListener('gesturestart', function(e){ e.preventDefault(); }, {passive:false});
+document.addEventListener('dblclick', function(e){ e.preventDefault(); }, {passive:false});
+
 const canvas = document.getElementById('scene'), ctx = canvas.getContext('2d');
-const els = {speedVal:document.getElementById('speedVal'),limitVal:document.getElementById('limitVal'),modeVal:document.getElementById('modeVal'),phaseLabel:document.getElementById('phaseLabel'),stationLabel:document.getElementById('stationLabel'),nextStation:document.getElementById('nextStation'),remainLabel:document.getElementById('remainLabel'),distanceFill:document.getElementById('distanceFill'),guide:document.getElementById('guide'),scoreLabel:document.getElementById('scoreLabel'),statusLabel:document.getElementById('statusLabel'),banner:document.getElementById('banner'),powerBars:document.getElementById('powerBars'),brakeBars:document.getElementById('brakeBars'),kpiSection:document.getElementById('kpiSection'),kpiNotch:document.getElementById('kpiNotch'),kpiGuide:document.getElementById('kpiGuide'),stationList:document.getElementById('stationList'),timePeriodLabel:document.getElementById('timePeriodLabel')};
+const els = {atcLabel:document.getElementById('atcLabel'),stopNeedle:document.getElementById('stopNeedle'),speedVal:document.getElementById('speedVal'),limitVal:document.getElementById('limitVal'),modeVal:document.getElementById('modeVal'),phaseLabel:document.getElementById('phaseLabel'),stationLabel:document.getElementById('stationLabel'),nextStation:document.getElementById('nextStation'),remainLabel:document.getElementById('remainLabel'),distanceFill:document.getElementById('distanceFill'),guide:document.getElementById('guide'),scoreLabel:document.getElementById('scoreLabel'),statusLabel:document.getElementById('statusLabel'),banner:document.getElementById('banner'),powerBars:document.getElementById('powerBars'),brakeBars:document.getElementById('brakeBars'),kpiSection:document.getElementById('kpiSection'),kpiNotch:document.getElementById('kpiNotch'),kpiGuide:document.getElementById('kpiGuide'),stationList:document.getElementById('stationList'),timePeriodLabel:document.getElementById('timePeriodLabel')};
 
 const segments = [
 {from:'原宿',to:'渋谷',distance:1200,targetTime:70,style:'harajuku',A:{openness:.82,greenery:.72,density:.40,signage:.22,crowd:.30,light:.42,platformHint:.02,nearPressure:.34,farScale:.46},M:{openness:.55,greenery:.35,density:.68,signage:.48,crowd:.52,light:.54,platformHint:.08,nearPressure:.56,farScale:.58},B:{openness:.24,greenery:.06,density:.96,signage:.88,crowd:.92,light:.72,platformHint:.78,nearPressure:.90,farScale:.74}},
@@ -141,7 +333,7 @@ const segments = [
 {from:'大崎',to:'品川',distance:2000,targetTime:96,style:'shinagawa',A:{openness:.26,greenery:.00,density:.92,signage:.62,crowd:.78,light:.66,platformHint:.10,nearPressure:.88,farScale:.70},M:{openness:.42,greenery:.01,density:.78,signage:.58,crowd:.70,light:.68,platformHint:.08,nearPressure:.70,farScale:.86},B:{openness:.36,greenery:.00,density:.94,signage:.72,crowd:.88,light:.78,platformHint:.88,nearPressure:.90,farScale:1.00}}
 ];
 const timeProfiles = {morning:{crowd:1.25,light:.95,signage:1.05,skyTop:'#96adc4',skyBottom:'#e1e8ef',label:'MORNING RUN'},day:{crowd:.82,light:1.05,signage:.92,skyTop:'#a9bfd3',skyBottom:'#edf2f6',label:'DAY RUN'},evening:{crowd:1.12,light:.92,signage:1.00,skyTop:'#b89f8d',skyBottom:'#e9d9c9',label:'EVENING RUN'},night:{crowd:.76,light:1.40,signage:1.22,skyTop:'#243040',skyBottom:'#39485c',label:'NIGHT RUN'}};
-const state = {segIndex:0,pos:0,speed:0,power:0,brake:0,score:0,timeInSeg:0,status:'発車待ち',stopped:true,bannerTimer:0,results:[],timeOfDay:'morning',shake:0,prevSpeed:0,opTrainTimer:1.4,opTrainActive:false,opTrainPos:0,overspeedFlash:0,audioEnabled:false};
+const state = {segIndex:0,pos:0,speed:0,power:0,brake:0,score:0,timeInSeg:0,status:'発車待ち',stopped:true,bannerTimer:0,results:[],timeOfDay:'morning',shake:0,prevSpeed:0,opTrainTimer:1.4,opTrainActive:false,opTrainPos:0,overspeedFlash:0,audioEnabled:false,jointTimer:0};
 let W=390,H=844,audioCtx=null;
 
 function ensureAudio(){
@@ -163,6 +355,7 @@ function beep(type='tick'){
   if(type === 'good'){ osc.type='triangle'; osc.frequency.setValueAtTime(660, now); osc.frequency.exponentialRampToValueAtTime(880, now+0.12); gain.gain.setValueAtTime(0.0001, now); gain.gain.exponentialRampToValueAtTime(0.035, now+0.02); gain.gain.exponentialRampToValueAtTime(0.0001, now+0.16); osc.start(now); osc.stop(now+0.18); return; }
   if(type === 'ok'){ osc.type='triangle'; osc.frequency.setValueAtTime(520, now); osc.frequency.exponentialRampToValueAtTime(620, now+0.10); gain.gain.setValueAtTime(0.0001, now); gain.gain.exponentialRampToValueAtTime(0.028, now+0.02); gain.gain.exponentialRampToValueAtTime(0.0001, now+0.14); osc.start(now); osc.stop(now+0.16); return; }
   if(type === 'bad'){ osc.type='square'; osc.frequency.setValueAtTime(220, now); gain.gain.setValueAtTime(0.0001, now); gain.gain.exponentialRampToValueAtTime(0.03, now+0.01); gain.gain.exponentialRampToValueAtTime(0.0001, now+0.12); osc.start(now); osc.stop(now+0.14); return; }
+  if(type === 'joint'){ osc.type='sine'; osc.frequency.setValueAtTime(40 + Math.random()*10, now); gain.gain.setValueAtTime(0.0001, now); gain.gain.linearRampToValueAtTime(0.015, now+0.01); gain.gain.exponentialRampToValueAtTime(0.0001, now+0.1); osc.start(now); osc.stop(now+0.12); return; }
   osc.type='square'; osc.frequency.setValueAtTime(540, now);
   gain.gain.setValueAtTime(0.0001, now); gain.gain.exponentialRampToValueAtTime(0.018, now+0.01); gain.gain.exponentialRampToValueAtTime(0.0001, now+0.06);
   osc.start(now); osc.stop(now+0.07);
@@ -179,6 +372,26 @@ function guideState(limit){const ap=approachProgress(); if(ap<=0)return '待機'
 function fillBars(container,count,onCount,brake){container.innerHTML=''; for(let i=0;i<count;i++){const d=document.createElement('div'); d.className='bar'+(brake?' brake':''); if(i<onCount)d.classList.add('on'); container.appendChild(d)}}
 function sceneValues(){const s=getSeg(),p=Math.max(0,Math.min(1,state.pos/s.distance)),base=mix(p,s.A,s.M,s.B),tp=timeProfiles[state.timeOfDay]; base.crowd=Math.min(1.2,base.crowd*tp.crowd); base.light=Math.min(1.4,base.light*tp.light); base.signage=Math.min(1.2,base.signage*tp.signage); base.approach=approachProgress(); base.style=s.style; return base}
 function showBanner(t){els.banner.textContent=t; state.bannerTimer=1.25; els.banner.classList.add('show')}
+function bindHold(id, onStep){
+  const el = document.getElementById(id);
+  let timer = null, repeat = null;
+  const start = (e) => {
+    if(e) e.preventDefault();
+    el.classList.add('pressed');
+    onStep();
+    timer = setTimeout(() => { repeat = setInterval(onStep, 90); }, 220);
+  };
+  const end = () => {
+    el.classList.remove('pressed');
+    if(timer){ clearTimeout(timer); timer = null; }
+    if(repeat){ clearInterval(repeat); repeat = null; }
+  };
+  el.addEventListener('pointerdown', start, {passive:false});
+  window.addEventListener('pointerup', end, {passive:false});
+  window.addEventListener('pointercancel', end, {passive:false});
+  return el;
+}
+
 function modifyNotch(kind,delta){
   if(!state.audioEnabled){ state.audioEnabled = true; ensureAudio(); }
   let played = false;
@@ -186,11 +399,14 @@ function modifyNotch(kind,delta){
   if(kind==='power'){state.brake=0;state.power=Math.max(0,Math.min(5,state.power+delta))} else {state.power=0;state.brake=Math.max(0,Math.min(5,state.brake+delta))}
   if(!played) beep('tick');
 }
-document.getElementById('powerUp').addEventListener('click',()=>modifyNotch('power',1));
-document.getElementById('powerDown').addEventListener('click',()=>modifyNotch('power',-1));
-document.getElementById('brakeUp').addEventListener('click',()=>modifyNotch('brake',1));
-document.getElementById('brakeDown').addEventListener('click',()=>modifyNotch('brake',-1));
-document.getElementById('hornBtn').addEventListener('click',()=>{state.audioEnabled=true; beep('horn'); showBanner('警笛')});
+bindHold('powerUp',()=>modifyNotch('power',1));
+bindHold('powerDown',()=>modifyNotch('power',-1));
+bindHold('brakeUp',()=>modifyNotch('brake',1));
+bindHold('brakeDown',()=>modifyNotch('brake',-1));
+const hornEl = document.getElementById('hornBtn');
+hornEl.addEventListener('pointerdown',()=>{hornEl.classList.add('pressed'); state.audioEnabled=true; beep('horn'); showBanner('警笛')},{passive:false});
+window.addEventListener('pointerup',()=>hornEl.classList.remove('pressed'),{passive:false});
+window.addEventListener('pointercancel',()=>hornEl.classList.remove('pressed'),{passive:false});
 document.querySelectorAll('.timeBtn').forEach(btn=>btn.addEventListener('click',()=>{state.timeOfDay=btn.dataset.time; document.querySelectorAll('.timeBtn').forEach(b=>b.classList.toggle('active',b===btn)); showBanner(btn.textContent+' モード')}));
 addEventListener('keydown',e=>{if(e.key==='ArrowRight')modifyNotch('power',1); if(e.key==='ArrowLeft')modifyNotch('power',-1); if(e.key==='ArrowUp')modifyNotch('brake',1); if(e.key==='ArrowDown')modifyNotch('brake',-1); if(e.key.toLowerCase()==='h'){state.audioEnabled=true; beep('horn'); showBanner('警笛')}});
 
@@ -199,8 +415,8 @@ function updateStationList(){const head='<div class="stationRow head"><div>駅�
 function evaluateStop(){
   const s=getSeg(); const remain=Math.abs(s.distance-state.pos);
   let grade='許容', points=80, sound='ok';
-  if(remain<=0.1){grade='ゼロ'; points=280; sound='good'}
-  else if(remain<=0.5){grade='準ゼロ'; points=220; sound='good'}
+  if(remain<=0.05){grade='ゼロ'; points=300; sound='good'}
+  else if(remain<=0.35){grade='準ゼロ'; points=240; sound='good'}
   else if(remain<=1.0){grade='良好'; points=180; sound='ok'}
   else if(remain<=2.5){grade='許容'; points=120; sound='ok'}
   else {grade='粗い'; points=60; sound='bad'}
@@ -235,10 +451,26 @@ function update(dt){
 
 function updateUI(limit){
   const s=getSeg(), ap=approachProgress(), sc=sceneValues(), tp=timeProfiles[state.timeOfDay];
-  els.speedVal.textContent=Math.round(state.speed); els.limitVal.textContent=limit; els.limitVal.style.color=ap>0?'var(--warn)':'var(--sub)';
+  els.speedVal.textContent=Math.round(state.speed); 
+  els.limitVal.textContent=limit; 
+  els.atcLabel.textContent=limit;
+  els.limitVal.style.color=ap>0?'var(--warn)':'var(--sub)';
+  const stopRemain = Math.max(-12, Math.min(12, (s.distance - state.pos)));
+  const needleX = 44 + stopRemain * 4.2;
+  els.stopNeedle.style.left = needleX + 'px';
   els.modeVal.textContent=phaseName(); els.phaseLabel.textContent=state.stopped?'発車準備':(ap>0?'停車精度が問われる場面':'通常走行');
-  els.stationLabel.textContent=s.from+' → '+s.to; els.nextStation.textContent=s.to; els.remainLabel.textContent='残り '+Math.max(0,Math.round(s.distance-state.pos))+'m';
-  els.scoreLabel.textContent=state.score; els.statusLabel.textContent=state.status; els.timePeriodLabel.textContent=tp.label;
+  els.stationLabel.textContent=s.from+' → '+s.to;
+  const accentMap = {harajuku:'緑から都市へ', shibuya:'情報密度が増加', meguro:'整って落ち着く', gotanda:'近景が迫る', osaki:'設備が密になる', shinagawa:'終着のスケール感'};
+  els.stationAccent.textContent = accentMap[s.style] || 'YAMANOTE VIEW';
+  els.nextStation.textContent=s.to;
+  els.remainLabel.textContent='残り '+Math.max(0,Math.round(s.distance-state.pos))+'m';
+  els.scoreLabel.textContent=state.score;
+  if(state.stopped && state.speed === 0){
+    els.statusLabel.innerHTML = '<span style="color:var(--yellow);animation:flash 1s infinite;">P1-P5で加速して出発</span>';
+  } else {
+    els.statusLabel.textContent=state.status;
+  }
+  els.timePeriodLabel.textContent=tp.label;
   const fill=Math.max(4,Math.min(100,(state.pos/s.distance)*100)); els.distanceFill.style.width=fill+'%';
   els.distanceFill.style.background=ap>0?'linear-gradient(90deg, rgba(215,155,78,.72), rgba(242,245,247,.94))':'linear-gradient(90deg, rgba(143,183,216,.72), rgba(242,245,247,.88))';
   const gs=guideState(limit); els.kpiGuide.textContent=gs==='待機'?Math.round(ap*100)+'%':gs; els.guide.classList.toggle('show',ap>0);
@@ -258,11 +490,11 @@ function drawSky(sc){
   ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
 }
 function drawBuildings(sc){
-  const horizon=lerp(H*.50,H*.59,1-sc.openness), t=performance.now()*0.0001+state.pos*0.004;
+  const horizon=lerp(H*.50,H*.59,1-sc.openness), t=performance.now()*0.0001+state.pos*0.004, speedStretch=Math.min(1.18, 1 + state.speed/450);
   const layers=[{c:sc.light>1.2?'rgba(64,82,104,0.70)':'rgba(89,102,114,0.52)', xs:[.02,.15,.26,.61,.76,.87], hs:[.12,.08,.11,.10,.15,.12], ws:[.14,.11,.16,.12,.10,.15], sh:.16},
   {c:sc.light>1.2?'rgba(48,60,74,0.84)':'rgba(84,92,101,0.78)', xs:[0,.12,.20,.66,.79,.88], hs:[.19,.15,.17,.18,.21,.17], ws:[.13,.10,.13,.12,.11,.12], sh:.42},
   {c:sc.light>1.2?'rgba(34,42,54,0.96)':'rgba(95,102,110,0.96)', xs:[0,.09,.79,.88], hs:[.25,.21,.27,.23], ws:[.10,.09,.09,.12], sh:1.0}];
-  layers.forEach((layer,idx)=>{ctx.fillStyle=layer.c; layer.xs.forEach((x,i)=>{const offset=((t*(idx+1)*26)%(W*.18))*layer.sh*(.22+sc.nearPressure*.08); const dir=i<Math.ceil(layer.xs.length/2)?-1:1; const left=W*x+dir*offset; const w=W*layer.ws[Math.min(i,layer.ws.length-1)]; let h=H*layer.hs[Math.min(i,layer.hs.length-1)]*(.75+sc.density*.50+(idx===0?sc.farScale*.25:0)); if(sc.style==='shibuya'&&idx>0)h*=1.08; if(sc.style==='meguro'&&idx===0)h*=.92; if(sc.style==='shinagawa'&&idx===0)h*=1.12; ctx.fillRect(left,horizon-h+idx*4,w,h); if(sc.signage>.35&&idx>0&&(i%2===0)){ctx.fillStyle=sc.light>1.2?'rgba(255,211,158,0.76)':'rgba(214,232,255,0.46)'; ctx.fillRect(left+w*.15,horizon-h+10+(i*6)%14,w*.35,4); ctx.fillStyle=layer.c}})});
+  layers.forEach((layer,idx)=>{ctx.fillStyle=layer.c; layer.xs.forEach((x,i)=>{const offset=((t*(idx+1)*26)%(W*.18))*layer.sh*(.22+sc.nearPressure*.08); const dir=i<Math.ceil(layer.xs.length/2)?-1:1; const left=W*x+dir*offset; const w=W*layer.ws[Math.min(i,layer.ws.length-1)] * (idx===2 ? speedStretch : idx===1 ? (1 + state.speed/800) : 1); let h=H*layer.hs[Math.min(i,layer.hs.length-1)]*(.75+sc.density*.50+(idx===0?sc.farScale*.25:0)); if(sc.style==='shibuya'&&idx>0)h*=1.12; if(sc.style==='meguro'&&idx===0)h*=.90; if(sc.style==='gotanda'&&idx===2)h*=1.08; if(sc.style==='osaki'&&idx===1)h*=1.07; if(sc.style==='shinagawa'&&idx===0)h*=1.16; ctx.fillRect(left,horizon-h+idx*4,w,h); if(sc.signage>.35&&idx>0&&(i%2===0)){ctx.fillStyle=sc.light>1.2?'rgba(255,211,158,0.76)':'rgba(214,232,255,0.46)'; ctx.fillRect(left+w*.15,horizon-h+10+(i*6)%14,w*.35,4); ctx.fillStyle=layer.c}})});
 }
 function drawTrack(sc){
   const baseCurve=Math.sin(state.pos/210)*(.01+sc.nearPressure*.02), sway=Math.sin(performance.now()*0.006)*(.004+state.shake*.4), vpX=W*(.5+baseCurve+sway), vpY=H*(.39+(1-sc.openness)*.05-state.shake*.02), ballastTop=H*(.65-sc.openness*.02);
@@ -305,12 +537,29 @@ function drawPlatform(sc){
   ctx.beginPath(); ctx.moveTo(W,H*.34); ctx.lineTo(W-W*.31,H*(.37+sc.signage*.01)); ctx.lineTo(W-W*.31,H*.43); ctx.lineTo(W,H*.40); ctx.closePath(); ctx.fill();
   ctx.strokeStyle=sc.light>1.2?'rgba(255,218,164,.85)':'rgba(255,255,255,.9)'; ctx.lineWidth=2;
   [0.21,0.27,0.34].forEach(f=>{ctx.beginPath(); ctx.moveTo(leftW*f,H*.82); ctx.lineTo(leftW*f,H*.82-H*(.13+f*.18)); ctx.stroke(); ctx.beginPath(); ctx.moveTo(W-rightW*f,H*.82); ctx.lineTo(W-rightW*f,H*.82-H*(.13+f*.18)); ctx.stroke()});
-  const crowdCount=Math.floor(sc.crowd*18);
+  let crowdCount=Math.floor(sc.crowd*18);
+  if(sc.style==='shibuya') crowdCount += 4;
+  if(sc.style==='meguro') crowdCount -= 2;
+  if(sc.style==='shinagawa') crowdCount += 2;
   for(let i=0;i<crowdCount;i++){const side=i%2===0?-1:1, lane=(i%9)/9, baseX=side<0?leftW*lerp(.18,.84,lane):W-rightW*lerp(.18,.84,lane), y=lerp(H*.78,topY+H*.06,lane), h=lerp(8,14,lane), w=lerp(3,5,lane); ctx.fillStyle=sc.light>1.2?'rgba(255,223,182,.56)':'rgba(32,38,44,.46)'; ctx.fillRect(baseX,y,w,h); ctx.beginPath(); ctx.arc(baseX+w/2,y-2.5,2.1,0,Math.PI*2); ctx.fill()}
-  const markerScale=.82+ap*.95+(state.speed>currentLimit()?0.14:0), mw=14*markerScale, mh=42*markerScale;
+  let markerScale=.82+ap*.95+(state.speed>currentLimit()?0.14:0);
+  if(sc.style==='shibuya') markerScale += 0.08;
+  if(sc.style==='shinagawa') markerScale += 0.05;
+  const mw=14*markerScale, mh=42*markerScale;
   ctx.globalAlpha=Math.min(1,t*1.2); ctx.strokeStyle='rgba(255,255,255,.95)'; ctx.fillStyle='rgba(255,255,255,.10)'; ctx.lineWidth=2;
   ctx.strokeRect(W*.5-mw/2,H*.88,mw,mh); ctx.fillRect(W*.5-mw/2,H*.88,mw,mh); ctx.globalAlpha=1;
 }
+
+function drawCabSignal(sc){
+  const ap = sc.approach;
+  if(ap <= 0.02) return;
+  const x = W*0.82, y = H*0.33;
+  ctx.fillStyle = ap > 0.7 ? 'rgba(255,86,86,.88)' : ap > 0.35 ? 'rgba(255,186,84,.82)' : 'rgba(122,210,255,.74)';
+  ctx.beginPath(); ctx.arc(x, y, 6 + ap*2.5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.10)';
+  ctx.fillRect(x-4, y+8, 8, 26);
+}
+
 function drawOverspeedVignette(){
   if(state.overspeedFlash<=0) return;
   const g=ctx.createRadialGradient(W*.5,H*.72,20,W*.5,H*.72,W*.75);
@@ -322,9 +571,9 @@ function drawOverspeedVignette(){
 function drawScene(){
   const sc=sceneValues();
   ctx.save();
-  const dx=Math.sin(performance.now()*0.009)*(state.shake*W*0.8), dy=Math.cos(performance.now()*0.012)*(state.shake*H*0.3);
-  ctx.translate(dx,dy);
-  drawSky(sc); drawBuildings(sc); drawTrack(sc); drawPoles(sc); drawOpposingTrain(sc); drawPlatform(sc); drawOverspeedVignette();
+  const dx=Math.sin(performance.now()*0.009)*(state.shake*W*0.8), dy=Math.cos(performance.now()*0.012)*(state.shake*H*0.3), pitch=((state.power * 0.18) - (state.brake * 0.28));
+  ctx.translate(dx,dy + pitch);
+  drawSky(sc); drawBuildings(sc); drawTrack(sc); drawPoles(sc); drawOpposingTrain(sc); drawPlatform(sc); drawCabSignal(sc); drawOverspeedVignette();
   ctx.restore();
 }
 let last=performance.now();
