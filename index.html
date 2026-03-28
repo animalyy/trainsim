@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-<title>山手運転録 v7</title>
+<title>山手運転録</title>
 <style>
 :root{--text:#F2F5F7;--sub:#8FB7D8;--warn:#D79B4E;--danger:#C94F4F;--yellow:#D9C85A}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
@@ -302,12 +302,62 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
   background:linear-gradient(180deg, rgba(217,200,90,.24), rgba(217,200,90,.10));
 }
 
+
+.metal-sheen{
+  position:absolute; inset:0; pointer-events:none; z-index:4;
+  background:
+    linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.05) 18%, rgba(255,255,255,0) 36%),
+    linear-gradient(260deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.03) 24%, rgba(255,255,255,0) 42%);
+  mix-blend-mode:screen; opacity:.7;
+}
+.glass-tone{
+  position:absolute; inset:0; pointer-events:none; z-index:4;
+  background:
+    linear-gradient(180deg, rgba(166,196,220,.06), rgba(166,196,220,0) 22%),
+    radial-gradient(ellipse at 50% 8%, rgba(255,255,255,.07), rgba(255,255,255,0) 48%);
+}
+
+.section-clear{
+  position:absolute; inset:0; z-index:28; display:none;
+  background:linear-gradient(180deg, rgba(8,11,15,.52), rgba(8,11,15,.78));
+  align-items:center; justify-content:center; padding:18px;
+}
+.section-clear.show{display:flex}
+.section-card{
+  width:min(90%, 340px);
+  border-radius:18px;
+  background:linear-gradient(180deg, rgba(22,28,34,.96), rgba(12,16,21,.96));
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 20px 40px rgba(0,0,0,.35);
+  padding:16px 16px 14px;
+}
+.section-card .k1{font-size:11px; letter-spacing:.14em; color:rgba(242,245,247,.48)}
+.section-card .k2{margin-top:6px; font-size:22px; font-weight:800}
+.section-card .k3{margin-top:10px; font-size:13px; line-height:1.65; color:rgba(242,245,247,.82)}
+.section-card .row{display:grid; grid-template-columns:1fr auto; gap:10px; margin-top:12px; font-size:12px; color:rgba(242,245,247,.72)}
+.section-card .go{
+  width:100%; height:42px; margin-top:14px; border-radius:12px;
+  border:1px solid rgba(217,200,90,.24);
+  background:linear-gradient(180deg, rgba(217,200,90,.24), rgba(217,200,90,.10));
+  color:rgba(242,245,247,.96); font-size:13px; font-weight:800;
+}
+.route-progress{
+  position:absolute; left:16px; right:16px; bottom:1.4%;
+  z-index:6; height:6px; border-radius:999px; overflow:hidden;
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.03);
+}
+.route-progress .fill{
+  position:absolute; left:0; top:0; bottom:0; width:0%;
+  background:linear-gradient(90deg, rgba(143,183,216,.86), rgba(255,255,255,.95));
+}
+
+@keyframes flash{0%,100%{opacity:1}50%{opacity:.35}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>山手運転録 試作 v7</h1>
-  <p class="lead">公開用に寄せた完成版です。長押し操作、景色の補間、音、停車評価、運転席の厚みをまとめて詰めています。</p>
+  <p class="lead">公開用に寄せた完成版です。長押し操作、景色の補間、音、停車評価、区間クリア感、運転席の厚みをまとめて詰めています。</p>
   <div class="layout">
     <section class="phone-card">
       <div class="phone">
@@ -318,6 +368,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
         <div class="cab-frame-bottom"></div>
         <div class="cab-reflection"></div>
         <div class="dash-shelf"></div>
+        <div class="metal-sheen"></div>
+        <div class="glass-tone"></div>
         <div class="cab-rivets"></div>
         <div class="overlay">
           <div class="meta">
@@ -372,6 +424,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
           </div>
         </div>
 <div class="touch hornwrap"><button id="hornBtn">HORN</button></div>
+        <div class="route-progress"><div class="fill" id="routeProgressFill"></div></div>
+        <div class="section-clear" id="sectionClear"><div class="section-card"><div class="k1">SECTION CLEAR</div><div class="k2" id="clearTitle">渋谷 停車</div><div class="k3" id="clearGrade">良好停車</div><div class="row"><span>区間得点</span><strong id="clearPoints">180</strong></div><div class="row"><span>累計得点</span><strong id="clearTotal">360</strong></div><button class="go" id="clearNextBtn">次の区間へ</button></div></div>
       </div>
     </section>
     <section class="panel">
@@ -414,6 +468,20 @@ function hideTutorial(markSeen){
     try{ localStorage.setItem(TUTORIAL_KEY, '1'); }catch(e){}
   }
 }
+function showSectionClear(title, gradeText, points){
+  state.sectionPaused = true;
+  state.pendingClear = true;
+  if(els.clearTitle) els.clearTitle.textContent = title;
+  if(els.clearGrade) els.clearGrade.textContent = gradeText;
+  if(els.clearPoints) els.clearPoints.textContent = points;
+  if(els.clearTotal) els.clearTotal.textContent = state.score;
+  if(els.clearWrap) els.clearWrap.classList.add('show');
+}
+function hideSectionClear(){
+  state.sectionPaused = false;
+  state.pendingClear = false;
+  if(els.clearWrap) els.clearWrap.classList.remove('show');
+}
 function showTutorialIfNeeded(){
   let seen = false;
   try{ seen = localStorage.getItem(TUTORIAL_KEY) === '1'; }catch(e){}
@@ -429,7 +497,7 @@ const segments = [
 {from:'大崎',to:'品川',distance:2000,targetTime:96,style:'shinagawa',A:{openness:.26,greenery:.00,density:.92,signage:.62,crowd:.78,light:.66,platformHint:.10,nearPressure:.88,farScale:.70},M:{openness:.42,greenery:.01,density:.78,signage:.58,crowd:.70,light:.68,platformHint:.08,nearPressure:.70,farScale:.86},B:{openness:.36,greenery:.00,density:.94,signage:.72,crowd:.88,light:.78,platformHint:.88,nearPressure:.90,farScale:1.00}}
 ];
 const timeProfiles = {morning:{crowd:1.25,light:.95,signage:1.05,skyTop:'#96adc4',skyBottom:'#e1e8ef',label:'MORNING RUN'},day:{crowd:.82,light:1.05,signage:.92,skyTop:'#a9bfd3',skyBottom:'#edf2f6',label:'DAY RUN'},evening:{crowd:1.12,light:.92,signage:1.00,skyTop:'#b89f8d',skyBottom:'#e9d9c9',label:'EVENING RUN'},night:{crowd:.76,light:1.40,signage:1.22,skyTop:'#243040',skyBottom:'#39485c',label:'NIGHT RUN'}};
-const state = {segIndex:0,pos:0,speed:0,power:0,brake:0,score:0,timeInSeg:0,status:'発車待ち',stopped:true,bannerTimer:0,results:[],timeOfDay:'morning',shake:0,prevSpeed:0,opTrainTimer:1.4,opTrainActive:false,opTrainPos:0,overspeedFlash:0,audioEnabled:false};
+const state = {segIndex:0,pos:0,speed:0,targetAccel:0,score:0,power:0,brake:0,timeInSeg:0,status:'発車待ち',stopped:true,bannerTimer:0,results:[],timeOfDay:'morning',shake:0,prevSpeed:0,opTrainTimer:1.4,opTrainActive:false,opTrainPos:0,overspeedFlash:0,audioEnabled:false,sectionPaused:false,pendingClear:null};
 let W=390,H=844,audioCtx=null;
 
 function ensureAudio(){
@@ -489,6 +557,7 @@ function bindHold(id, onStep){
 
 function modifyNotch(kind,delta){
   hideTutorial(true);
+  hideSectionClear();
   if(!state.audioEnabled){ state.audioEnabled = true; ensureAudio(); }
   let played = false;
   if(state.stopped&&kind==='power'&&delta>0){state.stopped=false;state.status='発車';showBanner('発車'); beep('tick'); played = true}
@@ -505,6 +574,7 @@ window.addEventListener('pointerup',()=>hornEl.classList.remove('pressed'),{pass
 window.addEventListener('pointercancel',()=>hornEl.classList.remove('pressed'),{passive:false});
 if(els.tutorialHideBtn) els.tutorialHideBtn.addEventListener('click', ()=>hideTutorial(false));
 if(els.tutorialStartBtn) els.tutorialStartBtn.addEventListener('click', ()=>hideTutorial(true));
+if(els.clearNextBtn) els.clearNextBtn.addEventListener('click', ()=>hideSectionClear());
 
 document.querySelectorAll('.timeBtn').forEach(btn=>btn.addEventListener('click',()=>{state.timeOfDay=btn.dataset.time; document.querySelectorAll('.timeBtn').forEach(b=>b.classList.toggle('active',b===btn)); showBanner(btn.textContent+' モード')}));
 addEventListener('keydown',e=>{if(e.key==='ArrowRight')modifyNotch('power',1); if(e.key==='ArrowLeft')modifyNotch('power',-1); if(e.key==='ArrowUp')modifyNotch('brake',1); if(e.key==='ArrowDown')modifyNotch('brake',-1); if(e.key.toLowerCase()==='h'){state.audioEnabled=true; beep('horn'); showBanner('警笛')}});
@@ -514,16 +584,26 @@ function updateStationList(){const head='<div class="stationRow head"><div>駅�
 function evaluateStop(){
   const s=getSeg(); const remain=Math.abs(s.distance-state.pos);
   let grade='許容', points=80, sound='ok';
-  if(remain<=0.05){grade='ゼロ'; points=300; sound='good'}
+  if(remain<=0.05){grade='ゼロ'; points=320; sound='good'}
   else if(remain<=0.35){grade='準ゼロ'; points=240; sound='good'}
   else if(remain<=1.0){grade='良好'; points=180; sound='ok'}
   else if(remain<=2.5){grade='許容'; points=120; sound='ok'}
   else {grade='粗い'; points=60; sound='bad'}
   points+=Math.max(0,90-Math.round(Math.abs(state.timeInSeg-s.targetTime)*1.8));
-  state.score+=points; state.results[state.segIndex]={grade:grade,points:points}; state.status=grade+' 停車'; showBanner(s.to+' '+grade);
+  state.score+=points; state.results[state.segIndex]={grade:grade,points:points}; state.status=grade+' 停車';
   if(state.audioEnabled) beep(sound);
   state.opTrainActive=false; state.opTrainTimer=1.2+Math.random()*2.0; state.opTrainPos=0;
-  if(state.segIndex<segments.length-1){state.segIndex+=1; state.pos=0; state.speed=0; state.power=0; state.brake=0; state.timeInSeg=0; state.stopped=true}else{state.stopped=true; state.status='終着'; showBanner('品川 到着')}
+  const title = s.to + ' 停車';
+  const gradeText = grade + '　停止位置 ' + remain.toFixed(2) + 'm';
+  if(state.segIndex<segments.length-1){
+    state.segIndex+=1;
+    state.pos=0; state.speed=0; state.targetAccel=0; state.power=0; state.brake=0; state.timeInSeg=0; state.stopped=true;
+    state.status='次区間へ';
+    showSectionClear(title, gradeText, points);
+  }else{
+    state.stopped=true; state.status='終着';
+    showSectionClear('品川 到着', gradeText, points);
+  }
   updateStationList();
 }
 
@@ -531,19 +611,28 @@ function updateOpTrain(dt,sc){if(state.opTrainActive){state.opTrainPos-=dt*(1.3+
 function update(dt){
   const s=getSeg(), limit=currentLimit();
   if(state.bannerTimer>0){state.bannerTimer-=dt; if(state.bannerTimer<=0)els.banner.classList.remove('show')}
+  if(state.sectionPaused){ updateUI(limit); return; }
+
   if(!state.stopped){
     state.timeInSeg+=dt;
-    const powerAccel=[0,.35,.55,.78,1.0,1.2][state.power], brakeAccel=[0,.45,.75,1.15,1.70,2.35][state.brake];
-    let accel=powerAccel-brakeAccel; accel-=state.speed>40?.14:state.speed>10?.10:.05; if(state.speed>limit+6)accel-=.24;
-    state.speed+=accel*dt*18; if(state.speed<0)state.speed=0;
-    state.pos+=(state.speed/3.6)*dt*1.12; if(state.pos>s.distance)state.pos=s.distance;
+    const powerMap=[0,.28,.46,.66,.86,1.02];
+    const brakeMap=[0,.40,.68,1.02,1.48,2.05];
+    const desiredAccel = powerMap[state.power] - brakeMap[state.brake] - (state.speed>40?.14:state.speed>10?.10:.05) - (state.speed>limit+6?.24:0);
+    state.targetAccel += (desiredAccel - state.targetAccel) * Math.min(1, dt*4.4);
+    state.speed += state.targetAccel*dt*18;
+    if(state.speed<0) state.speed=0;
+    state.pos += (state.speed/3.6)*dt*1.12;
+    if(state.pos>s.distance) state.pos=s.distance;
     const remain=s.distance-state.pos;
     if(remain<=3.0&&state.speed<=2.2&&approachProgress()>.05)evaluateStop();
     if(state.pos>=s.distance&&state.speed>8)state.score=Math.max(0,state.score-1);
     if(state.speed>limit+8) state.score=Math.max(0,state.score-dt*2.2);
+  } else {
+    state.targetAccel += (0 - state.targetAccel) * Math.min(1, dt*5.5);
   }
+
   const dv=state.speed-state.prevSpeed||0; state.prevSpeed=state.speed;
-  state.shake=Math.min(.08, Math.max(0,state.shake-dt*(state.stopped?4.2:2.8))+Math.min(.06,Math.abs(dv)*.00042)+(state.speed>0?.002:0));
+  state.shake=Math.max(0,state.shake-dt*2.6)+Math.min(.06,Math.abs(dv)*.00042)+(state.speed>0?.002:0);
   state.overspeedFlash=Math.max(0,state.overspeedFlash-dt*1.8); if(state.speed>limit+4)state.overspeedFlash=Math.min(.42,state.overspeedFlash+dt*1.7);
   updateOpTrain(dt,sceneValues()); updateUI(limit);
 }
@@ -563,7 +652,13 @@ function updateUI(limit){
   els.stationAccent.textContent = accentMap[s.style] || 'YAMANOTE VIEW';
   els.nextStation.textContent=s.to;
   els.remainLabel.textContent='残り '+Math.max(0,Math.round(s.distance-state.pos))+'m';
-  els.scoreLabel.textContent=state.score; els.statusLabel.textContent=state.status; els.timePeriodLabel.textContent=tp.label;
+  els.scoreLabel.textContent=state.score; els.statusLabel.innerHTML = (state.stopped && state.speed === 0 && !state.sectionPaused) ? '<span style="color:var(--yellow); animation:flash 1s infinite;">P1-P5で加速して出発</span>' : state.status; els.timePeriodLabel.textContent=tp.label;
+  if(els.routeProgressFill){
+    const total = segments.length;
+    const segProgress = state.segIndex / total;
+    const local = (state.pos / s.distance) / total;
+    els.routeProgressFill.style.width = ((segProgress + local) * 100).toFixed(1) + '%';
+  }
   const fill=Math.max(4,Math.min(100,(state.pos/s.distance)*100)); els.distanceFill.style.width=fill+'%';
   els.distanceFill.style.background=ap>0?'linear-gradient(90deg, rgba(215,155,78,.72), rgba(242,245,247,.94))':'linear-gradient(90deg, rgba(143,183,216,.72), rgba(242,245,247,.88))';
   const gs=guideState(limit); els.kpiGuide.textContent=gs==='待機'?Math.round(ap*100)+'%':gs; els.guide.classList.toggle('show',ap>0);
@@ -577,27 +672,78 @@ function updateUI(limit){
   els.kpiSection.textContent=s.from; els.kpiNotch.textContent=state.power>0?'P'+state.power:state.brake>0?'B'+state.brake:'N';
 }
 
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+function mixHex(c1, c2, t){
+  const a = c1.replace('#',''), b = c2.replace('#','');
+  const ar = parseInt(a.slice(0,2),16), ag = parseInt(a.slice(2,4),16), ab = parseInt(a.slice(4,6),16);
+  const br = parseInt(b.slice(0,2),16), bg = parseInt(b.slice(2,4),16), bb = parseInt(b.slice(4,6),16);
+  const rr = Math.round(ar + (br-ar)*t), rg = Math.round(ag + (bg-ag)*t), rb = Math.round(ab + (bb-ab)*t);
+  return `rgb(${rr},${rg},${rb})`;
+}
 function drawSky(sc){
-  const tp=timeProfiles[state.timeOfDay]; const g=ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,tp.skyTop); g.addColorStop(.25,sc.light>1.2?'#56657a':'#d4dde4'); g.addColorStop(.54,tp.skyBottom); g.addColorStop(.55,sc.light>1.2?'#4d5766':'#cfd6db'); g.addColorStop(1,sc.light>1.2?'#27313e':'#9ea4aa');
-  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  const tp=timeProfiles[state.timeOfDay];
+  const urban = clamp(sc.density * 0.75 + sc.signage * 0.35, 0, 1);
+  const coolTop = sc.light > 1.2 ? '#314154' : tp.skyTop;
+  const warmHaze = state.timeOfDay === 'evening' ? '#e8c5a8' : '#d4dde4';
+  const lowerTone = sc.light > 1.2 ? '#2c3745' : '#9ea4aa';
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0, mixHex(coolTop, '#b7cada', sc.openness*0.18));
+  g.addColorStop(.18, mixHex(warmHaze, '#9fb8cf', urban*0.15));
+  g.addColorStop(.46, mixHex(tp.skyBottom, '#dbe6ee', sc.openness*0.1));
+  g.addColorStop(.55, sc.light>1.2 ? '#516174' : '#cfd6db');
+  g.addColorStop(1, mixHex(lowerTone, '#7d858d', sc.nearPressure*0.16));
+  ctx.fillStyle=g;
+  ctx.fillRect(0,0,W,H);
+
+  const haze = ctx.createLinearGradient(0, H*0.18, 0, H*0.72);
+  haze.addColorStop(0, 'rgba(255,255,255,0)');
+  haze.addColorStop(1, `rgba(255,255,255,${0.03 + sc.openness*0.05})`);
+  ctx.fillStyle = haze;
+  ctx.fillRect(0,0,W,H);
 }
 function drawBuildings(sc){
   const horizon=lerp(H*.50,H*.59,1-sc.openness), t=performance.now()*0.0001+state.pos*0.004;
   const layers=[{c:sc.light>1.2?'rgba(64,82,104,0.70)':'rgba(89,102,114,0.52)', xs:[.02,.15,.26,.61,.76,.87], hs:[.12,.08,.11,.10,.15,.12], ws:[.14,.11,.16,.12,.10,.15], sh:.16},
   {c:sc.light>1.2?'rgba(48,60,74,0.84)':'rgba(84,92,101,0.78)', xs:[0,.12,.20,.66,.79,.88], hs:[.19,.15,.17,.18,.21,.17], ws:[.13,.10,.13,.12,.11,.12], sh:.42},
   {c:sc.light>1.2?'rgba(34,42,54,0.96)':'rgba(95,102,110,0.96)', xs:[0,.09,.79,.88], hs:[.25,.21,.27,.23], ws:[.10,.09,.09,.12], sh:1.0}];
-  layers.forEach((layer,idx)=>{ctx.fillStyle=layer.c; layer.xs.forEach((x,i)=>{const offset=((t*(idx+1)*26)%(W*.18))*layer.sh*(.22+sc.nearPressure*.08); const dir=i<Math.ceil(layer.xs.length/2)?-1:1; const left=W*x+dir*offset; const w=W*layer.ws[Math.min(i,layer.ws.length-1)]; let h=H*layer.hs[Math.min(i,layer.hs.length-1)]*(.75+sc.density*.50+(idx===0?sc.farScale*.25:0)); if(sc.style==='shibuya'&&idx>0)h*=1.12; if(sc.style==='meguro'&&idx===0)h*=.90; if(sc.style==='gotanda'&&idx===2)h*=1.08; if(sc.style==='osaki'&&idx===1)h*=1.07; if(sc.style==='shinagawa'&&idx===0)h*=1.16; ctx.fillRect(left,horizon-h+idx*4,w,h); if(sc.signage>.35&&idx>0&&(i%2===0)){ctx.fillStyle=sc.light>1.2?'rgba(255,211,158,0.76)':'rgba(214,232,255,0.46)'; ctx.fillRect(left+w*.15,horizon-h+10+(i*6)%14,w*.35,4); ctx.fillStyle=layer.c}})});
+  layers.forEach((layer,idx)=>{ctx.fillStyle=layer.c; layer.xs.forEach((x,i)=>{const offset=((t*(idx+1)*26)%(W*.18))*layer.sh*(.22+sc.nearPressure*.08); const dir=i<Math.ceil(layer.xs.length/2)?-1:1; const left=W*x+dir*offset; const w=W*layer.ws[Math.min(i,layer.ws.length-1)]; let h=H*layer.hs[Math.min(i,layer.hs.length-1)]*(.75+sc.density*.50+(idx===0?sc.farScale*.25:0)); if(sc.style==='shibuya'&&idx>0)h*=1.12; if(sc.style==='meguro'&&idx===0)h*=.90; if(sc.style==='gotanda'&&idx===2)h*=1.08; if(sc.style==='osaki'&&idx===1)h*=1.07; if(sc.style==='shinagawa'&&idx===0)h*=1.16; ctx.fillRect(left,horizon-h+idx*4,w,h);
+        if(idx > 0){
+          ctx.fillStyle = 'rgba(255,255,255,.04)';
+          ctx.fillRect(left, horizon-h+idx*4, Math.max(1, w*0.08), h);
+          ctx.fillStyle = layer.c;
+        } if(sc.signage>.35&&idx>0&&(i%2===0)){ctx.fillStyle=sc.light>1.2?'rgba(255,211,158,0.76)':'rgba(214,232,255,0.46)'; ctx.fillRect(left+w*.15,horizon-h+10+(i*6)%14,w*.35,4); ctx.fillStyle=layer.c}})});
 }
 function drawTrack(sc){
   const baseCurve=Math.sin(state.pos/210)*(.01+sc.nearPressure*.02), sway=Math.sin(performance.now()*0.006)*(.004+state.shake*.4), vpX=W*(.5+baseCurve+sway), vpY=H*(.39+(1-sc.openness)*.05-state.shake*.02), ballastTop=H*(.65-sc.openness*.02);
   const ballast=new Path2D(); ballast.moveTo(W*.08,H); ballast.lineTo(W*.92,H); ballast.lineTo(vpX+W*(.11+sc.nearPressure*.02),ballastTop); ballast.lineTo(vpX-W*(.11+sc.nearPressure*.02),ballastTop); ballast.closePath();
-  const bg=ctx.createLinearGradient(0,ballastTop,0,H); bg.addColorStop(0,'rgba(132,138,145,.12)'); bg.addColorStop(.56,'rgba(110,114,120,.78)'); bg.addColorStop(1,sc.light>1.2?'rgba(64,70,82,1)':'rgba(92,95,101,1)');
+  const bg=ctx.createLinearGradient(0,ballastTop,0,H);
+  bg.addColorStop(0,'rgba(132,138,145,.10)');
+  bg.addColorStop(.40,'rgba(118,123,129,.52)');
+  bg.addColorStop(.78,sc.light>1.2?'rgba(62,69,80,.96)':'rgba(88,93,99,.98)');
+  bg.addColorStop(1,sc.light>1.2?'rgba(52,58,68,1)':'rgba(72,76,82,1)');
   ctx.fillStyle=bg; ctx.fill(ballast);
-  ctx.strokeStyle='rgba(183,185,188,.98)'; ctx.lineWidth=2.4; ctx.beginPath(); ctx.moveTo(W*.19,H); ctx.lineTo(vpX-W*.018,vpY); ctx.moveTo(W*.81,H); ctx.lineTo(vpX+W*.018,vpY); ctx.stroke();
+
+  const railGrad = ctx.createLinearGradient(0, vpY, 0, H);
+  railGrad.addColorStop(0, 'rgba(255,255,255,.96)');
+  railGrad.addColorStop(.18, 'rgba(226,231,236,.92)');
+  railGrad.addColorStop(.52, 'rgba(170,176,183,.98)');
+  railGrad.addColorStop(1, 'rgba(108,114,120,1)');
+  ctx.strokeStyle=railGrad; ctx.lineWidth=2.7;
+  ctx.beginPath(); ctx.moveTo(W*.19,H); ctx.lineTo(vpX-W*.018,vpY); ctx.moveTo(W*.81,H); ctx.lineTo(vpX+W*.018,vpY); ctx.stroke();
+
+  ctx.strokeStyle='rgba(255,255,255,.18)';
+  ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(W*.195,H); ctx.lineTo(vpX-W*.015,vpY+1); ctx.moveTo(W*.805,H); ctx.lineTo(vpX+W*.015,vpY+1); ctx.stroke();
+
   const count=Math.floor(9+sc.density*3);
-  for(let i=0;i<count;i++){const t=i/Math.max(1,count-1), y=H*(.94-t*.29)-state.shake*H*.01, width=W*(.56-t*.33); ctx.fillStyle='rgba(77,82,87,.9)'; ctx.fillRect((W-width)/2+(baseCurve+sway)*W*(.8-sc.openness*.3)*(1-t),y,width,2)}
-  ctx.strokeStyle='rgba(141,147,154,.35)'; ctx.lineWidth=2; ctx.beginPath();
+  for(let i=0;i<count;i++){
+    const t=i/Math.max(1,count-1), y=H*(.94-t*.29)-state.shake*H*.01, width=W*(.56-t*.33);
+    const sleeperShade = 64 + Math.round((1-t)*20);
+    ctx.fillStyle=`rgba(${sleeperShade},${sleeperShade+4},${sleeperShade+8},.92)`;
+    ctx.fillRect((W-width)/2+(baseCurve+sway)*W*(.8-sc.openness*.3)*(1-t),y,width,2);
+  }
+
+  ctx.strokeStyle='rgba(141,147,154,.28)'; ctx.lineWidth=2; ctx.beginPath();
   ctx.moveTo(0,H*(.82-sc.openness*.02)); ctx.lineTo(W*(.20-sc.openness*.03),H*.82); ctx.lineTo(vpX-W*.12,ballastTop);
   ctx.moveTo(W,H*(.82-sc.openness*.02)); ctx.lineTo(W*(.80+sc.openness*.03),H*.82); ctx.lineTo(vpX+W*.12,ballastTop); ctx.stroke();
 }
@@ -639,7 +785,9 @@ function drawPlatform(sc){
   if(sc.style==='shibuya') markerScale += 0.08;
   if(sc.style==='shinagawa') markerScale += 0.05;
   const mw=14*markerScale, mh=42*markerScale;
-  ctx.globalAlpha=Math.min(1,t*1.2); ctx.strokeStyle='rgba(255,255,255,.95)'; ctx.fillStyle='rgba(255,255,255,.10)'; ctx.lineWidth=2;
+  ctx.globalAlpha=Math.min(1,t*1.2); ctx.strokeStyle=sc.style==='shibuya' ? 'rgba(255,248,230,.98)' : 'rgba(255,255,255,.95)';
+  ctx.fillStyle=sc.style==='shibuya' ? 'rgba(255,247,220,.12)' : 'rgba(255,255,255,.10)';
+  ctx.lineWidth=2;
   ctx.strokeRect(W*.5-mw/2,H*.88,mw,mh); ctx.fillRect(W*.5-mw/2,H*.88,mw,mh); ctx.globalAlpha=1;
 }
 
