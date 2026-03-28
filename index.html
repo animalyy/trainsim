@@ -146,7 +146,7 @@
       if (!game.newRecordShown) {
         game.newRecord = true;
         game.newRecordShown = true;
-        game.newRecordFreeze = 0.8;
+        game.newRecordFreeze = 0.0;
         game.newRecordFlash = 1;
         game.flash = Math.max(game.flash, 0.45);
         game.flashColor = '#ffffff';
@@ -967,14 +967,7 @@
   }
 
   function update(dt) {
-    if (game.newRecordFreeze > 0) {
-      game.newRecordFreeze -= dt;
-      if (game.flash > 0.01) game.flash *= 0.92; else game.flash = 0;
-      if (game.feverFlash > 0.01) game.feverFlash *= 0.92; else game.feverFlash = 0;
-      if (game.newRecordFlash > 0.01) game.newRecordFlash *= 0.95; else game.newRecordFlash = 0;
-      updateHud();
-      return;
-    }
+    if (game.newRecordFreeze > 0) game.newRecordFreeze = Math.max(0, game.newRecordFreeze - dt);
     if (game.hitStopTimer > 0) {
       game.hitStopTimer -= dt;
       if (game.flash > 0.01) game.flash *= 0.85; else game.flash = 0;
