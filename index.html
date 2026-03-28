@@ -43,6 +43,9 @@
   .color-btn.pink{color:var(--magenta);box-shadow:0 0 20px rgba(255,0,255,.22);}
   .color-btn.active{transform:scale(.98);filter:brightness(1.18);border-color:rgba(255,255,255,.42);}
   .color-btn:active{transform:scale(.96);}
+  .fire-controls{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(74px + env(safe-area-inset-bottom));z-index:7;pointer-events:none;}
+  .fire-btn{pointer-events:auto;min-width:138px;border:1px solid rgba(255,255,255,.22);background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.06));backdrop-filter:blur(12px);border-radius:24px;padding:16px 24px;font:900 18px/1 Orbitron,sans-serif;letter-spacing:.1em;color:#fff;box-shadow:0 0 24px rgba(255,255,255,.14);touch-action:none;user-select:none;-webkit-user-select:none;}
+  .fire-btn.firing{transform:scale(.96);filter:brightness(1.2);box-shadow:0 0 28px rgba(255,255,255,.26);}
 </style>
 </head>
 <body>
@@ -58,13 +61,16 @@
     <button class="color-btn blue active" id="blueBtn" type="button">青</button>
     <button class="color-btn pink" id="pinkBtn" type="button">ピンク</button>
   </div>
-  <div class="hint" id="hint">長押しで撃つ　下の青とピンクで色チェンジ　ダブルタップでドカン　弾は撃ち消せる</div>
+  <div class="fire-controls">
+    <button class="fire-btn" id="fireBtn" type="button">撃つ</button>
+  </div>
+  <div class="hint" id="hint">中央の撃つを長押し　左右の青とピンクで色チェンジ　ダブルタップでドカン　弾は撃ち消せる</div>
   <div class="fever-ui"><div id="energyBar"></div></div>
   <div class="overlay" id="titleScreen">
     <div class="panel">
       <h1 id="mainTitle">QUANTUM<br>SWARM</h1>
       <p id="subTitle" style="letter-spacing:2px;margin:18px 0 0;">ETERNAL DYNASTY EDITION</p>
-      <p class="lead" id="leadText">上から来る敵を、下の砲台でぶち抜くだけ。<br>長押しで撃つ。青い敵は青、ピンクの敵はピンク。<br>ダブルタップで、まとめてドカン。ボス弾は同じ色で撃ち消せる。</p>
+      <p class="lead" id="leadText">上から来る敵を、下の砲台でぶち抜くだけ。<br>中央の撃つを長押し。青い敵は青、ピンクの敵はピンク。<br>左右の色ボタンで切り替え、ダブルタップでまとめてドカン。ボス弾は同じ色で撃ち消せる。</p>
       <button id="startBtn">ENGAGE</button>
     </div>
   </div>
@@ -90,6 +96,7 @@
   const colorBadge = document.getElementById('colorBadge');
   const blueBtn = document.getElementById('blueBtn');
   const pinkBtn = document.getElementById('pinkBtn');
+  const fireBtn = document.getElementById('fireBtn');
 
   const COLORS = ['#00ffff', '#ff00ff'];
   const COLOR_NAMES = ['青', 'ピンク'];
@@ -333,7 +340,7 @@
     updateHud();
     mainTitle.innerHTML = 'QUANTUM<br>SWARM';
     subTitle.textContent = `BEST ${highScore.toLocaleString()}`;
-    leadText.innerHTML = '長押しで撃つ。下の青とピンクで色チェンジ。ダブルタップでドカン。<br>波を抜け、ボスを倒し、記録を更新する。';
+    leadText.innerHTML = '中央の撃つを長押し。左右の青とピンクで色チェンジ。ダブルタップでドカン。<br>波を抜け、ボスを倒し、記録を更新する。';
     startBtn.textContent = 'ENGAGE';
     titleScreen.style.display = 'none';
   }
@@ -1623,6 +1630,7 @@
     game.fireTouchActive = true;
     game.holdArmed = false;
     game.autoFire = game.holdDelay;
+    fireBtn.classList.add('firing');
   }
 
   function stopFireInput() {
@@ -1632,6 +1640,7 @@
     game.autoFire = 0;
     game.activePointerId = null;
     game.fireTouchId = null;
+    fireBtn.classList.remove('firing');
   }
 
   function onPointerDown(e) {
@@ -1660,31 +1669,52 @@
     try { canvas.releasePointerCapture?.(e.pointerId); } catch (_) {}
   }
 
-  function onTouchStart(e) {
+  function onFireTouchStart(e) {
     if (game.state !== 'play') return;
     if (game.fireTouchId !== null) return;
     const t = e.changedTouches[0];
     if (!t) return;
     e.preventDefault();
+    e.stopPropagation();
     game.fireTouchId = t.identifier;
     startFireInput();
   }
 
-  function onTouchEnd(e) {
+  function onFireTouchEnd(e) {
     if (game.state !== 'play') return;
     const ended = Array.from(e.changedTouches).some(t => t.identifier === game.fireTouchId);
     if (!ended) return;
     e.preventDefault();
-    const wasHold = game.holdArmed;
+    e.stopPropagation();
     stopFireInput();
-    if (!wasHold) handleTap(performance.now());
   }
 
-  function onTouchCancel(e) {
+  function onFireTouchCancel(e) {
     const ended = Array.from(e.changedTouches).some(t => t.identifier === game.fireTouchId);
     if (!ended) return;
     stopFireInput();
     game.lastTapAt = 0;
+  }
+
+  function onFirePointerDown(e) {
+    if (game.state !== 'play') return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.pointerType === 'touch') return;
+    if (game.activePointerId !== null) return;
+    game.activePointerId = e.pointerId;
+    startFireInput();
+    fireBtn.setPointerCapture?.(e.pointerId);
+  }
+
+  function onFirePointerUp(e) {
+    if (e.pointerType === 'touch') return;
+    if (game.activePointerId === null) return;
+    if (e.pointerId !== game.activePointerId) return;
+    e.preventDefault();
+    e.stopPropagation();
+    stopFireInput();
+    try { fireBtn.releasePointerCapture?.(e.pointerId); } catch (_) {}
   }
 
   function cancelPointer() {
@@ -1696,9 +1726,13 @@
   canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
   canvas.addEventListener('pointerup', onPointerUp, { passive: false });
   canvas.addEventListener('pointercancel', onPointerCancel, { passive: false });
-  canvas.addEventListener('touchstart', onTouchStart, { passive: false });
-  window.addEventListener('touchend', onTouchEnd, { passive: false });
-  window.addEventListener('touchcancel', onTouchCancel, { passive: false });
+  fireBtn.addEventListener('touchstart', onFireTouchStart, { passive: false });
+  window.addEventListener('touchend', onFireTouchEnd, { passive: false });
+  window.addEventListener('touchcancel', onFireTouchCancel, { passive: false });
+  fireBtn.addEventListener('pointerdown', onFirePointerDown, { passive: false });
+  window.addEventListener('pointerup', onFirePointerUp, { passive: false });
+  window.addEventListener('pointercancel', onFirePointerUp, { passive: false });
+  fireBtn.addEventListener('lostpointercapture', cancelPointer);
   canvas.addEventListener('lostpointercapture', cancelPointer);
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   window.addEventListener('blur', cancelPointer);
